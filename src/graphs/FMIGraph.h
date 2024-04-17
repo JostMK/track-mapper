@@ -9,8 +9,14 @@
 
 class FMIGraph: public Graph {
 public:
-    int Test2();
-    void Test() override;
+     explicit FMIGraph(const std::string& filePath);
+
+private:
+    inline void PopulateAsEmpty();
+
+    std::vector<Location> nodeLocations;
+    std::vector<int> edgeListLookup;
+    std::vector<Edge> edges;
 };
 
 

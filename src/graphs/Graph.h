@@ -8,6 +8,11 @@
 #include <string>
 #include <vector>
 
+struct Location {
+    long latitude;
+    long longitude;
+};
+
 struct Edge {
     int adjacentNodeIndex;
     int distance;
@@ -15,20 +20,8 @@ struct Edge {
 
 class Graph {
 public:
-    Graph(std::string inputFilename);
-    virtual ~Graph() = 0;
-    virtual void Save(std::string outputFilename) = 0;
-
-    virtual std::vector<Edge> GetEdges(int nodeIndex);
-
-private:
-    int nodeCount;
-    std::vector<int> edgesLookup; // lookup into nodesEdges to where the edges of a node start
-    std::vector<Edge> nodesEdges; // stores the adjacency list flatted out
-
-    virtual void Load(std::string inputFilename) = 0;
+    virtual std::vector<Edge> GetEdges(int nodeIndex) = 0;
+    virtual Location GetLocation(int nodeIndex) = 0;
 };
-
-
 
 #endif //GRAPH_H
