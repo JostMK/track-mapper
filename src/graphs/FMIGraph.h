@@ -7,13 +7,15 @@
 
 #include "Graph.h"
 
-class FMIGraph: public Graph {
+class FMIGraph final : public Graph {
 public:
-     explicit FMIGraph(const std::string& filePath);
+    explicit FMIGraph(const std::string& filePath);
+
+    int GetNodeCount() override;
+    std::vector<Edge> GetEdges(int nodeIndex) override;
+    Location GetLocation(int nodeIndex) override;
 
 private:
-    inline void PopulateAsEmpty();
-
     std::vector<Location> nodeLocations;
     std::vector<int> edgeListLookup;
     std::vector<Edge> edges;

@@ -5,12 +5,11 @@
 #ifndef GRAPH_H
 #define GRAPH_H
 
-#include <string>
 #include <vector>
 
 struct Location {
-    long latitude;
-    long longitude;
+    double latitude;
+    double longitude;
 };
 
 struct Edge {
@@ -20,6 +19,8 @@ struct Edge {
 
 class Graph {
 public:
+    virtual ~Graph() = default;
+    virtual int GetNodeCount() = 0;
     virtual std::vector<Edge> GetEdges(int nodeIndex) = 0;
     virtual Location GetLocation(int nodeIndex) = 0;
 };
