@@ -23,11 +23,10 @@ FMIGraph::FMIGraph(const std::string& filePath) {
     // header section - 7 lines of metadata:
     std::string line;
     // skipping unrelevant data
-    std::getline(fileReadStream, line); // id: <unsigned integer>
-    std::getline(fileReadStream, line); // timestamp: <UNIX timestamp>
-    std::getline(fileReadStream, line); // type: 'standard' or 'maxspeed'
-    std::getline(fileReadStream, line); // revision: <unsigned integer>
-    std::getline(fileReadStream, line); // empty line
+    while(std::getline(fileReadStream, line)) {
+        if(line.empty()) // header section is seperated by newline at the end
+            break;
+    }
 
     uint32_t nodeCount;
     fileReadStream >> nodeCount;
