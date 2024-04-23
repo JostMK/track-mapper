@@ -1,17 +1,14 @@
 //
-// Created by Jost on 16/04/2024.
+// Created by Jost on 22/04/2024.
 //
 
-#include <fstream>
-#include <iostream>
-#include <cstdint>
-#include <sstream>
-#include "FMIGraph.h"
+#include "FMIGraphReader.h"
 
 #include <chrono>
+#include <fstream>
+#include <iostream>
 
-//TODO: clean up and make more robust
-FMIGraph::FMIGraph(const std::string& filePath) {
+BasicGraph FMIGraphReader::read(std::string &filePath) {
     // Implementation follows: https://github.com/fmi-alg/OsmGraphCreator/blob/master/readers/fmitextreader.cpp
     // Details from FmiTextGraphWriter in: https://github.com/fmi-alg/OsmGraphCreator/blob/master/creator/GraphWriter.cpp
     std::ifstream fileReadStream;
@@ -28,14 +25,18 @@ FMIGraph::FMIGraph(const std::string& filePath) {
             break;
     }
 
-    uint32_t nodeCount;
+    int nodeCount;
     fileReadStream >> nodeCount;
 
-    uint32_t edgeCount;
+    int edgeCount;
     fileReadStream >> edgeCount;
 
     std::getline(fileReadStream, line); // get remaining new line symbol
     // TODO: check int limits
+
+    std::unique_ptr<Location[]> nodeLocations;
+    std::unique_ptr<int[]> edgesLookupIndices;
+    std::unique_ptr<Edge[]> edges;
 
     std::cout << "Loading graph with " << nodeCount << " nodes and " << edgeCount << " edges.." << std::endl;
     auto startTime = std::chrono::high_resolution_clock::now();
@@ -97,19 +98,5 @@ FMIGraph::FMIGraph(const std::string& filePath) {
     auto loadTimeS = std::chrono::duration_cast<std::chrono::seconds>(endTime - startTime);
     std::cout << "Loaded graph in " << loadTimeS.count() << "s" << std::endl;
 }
-
-int FMIGraph::GetNodeCount() const {
-    //TODO: dont cast idk ¯\_(ツ)_/¯
-    return static_cast<int>(nodeLocations.size());
 }
 
-std::vector<Edge> FMIGraph::GetEdges(const int nodeIndex) {
-    const int startIndex = edgeListLookup[nodeIndex];
-    const int nextNodeStartIndex = edgeListLookup[nodeIndex+1];
-
-    return {&edges[startIndex], &edges[nextNodeStartIndex]};
-}
-
-Location FMIGraph::GetLocation(const int nodeIndex) const {
-    return nodeLocations[nodeIndex];
-}

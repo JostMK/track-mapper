@@ -5,15 +5,15 @@
 #ifndef FMIGRAPH_H
 #define FMIGRAPH_H
 
-#include "Graph.h"
+#include "IGraph.h"
 
-class FMIGraph final : public Graph {
+class FMIGraph final : public IGraph {
 public:
     explicit FMIGraph(const std::string& filePath);
 
-    int GetNodeCount() override;
+    int GetNodeCount() const override;
     std::vector<Edge> GetEdges(int nodeIndex) override;
-    Location GetLocation(int nodeIndex) override;
+    Location GetLocation(int nodeIndex) const override;
 
 private:
     std::vector<Location> nodeLocations;
