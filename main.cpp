@@ -1,6 +1,6 @@
 #include <iostream>
+#include "src/graphs/FMIGraphReader.h"
 
-#include "src/graphs/FMIGraph.h"
 
 int main()
 {
@@ -8,7 +8,7 @@ int main()
 
     std::string filePath;
     std::cin>>filePath;
-    FMIGraph graph(filePath);
+    BasicGraph graph = FMIGraphReader::read(filePath);
     /**
     for (int i = 0; i < graph.GetNodeCount(); ++i) {
         auto [latitude, longitude] = graph.GetLocation(i);

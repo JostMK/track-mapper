@@ -7,12 +7,12 @@
 
 #include <vector>
 
-const struct Location {
+struct Location {
     double latitude;
     double longitude;
 };
 
-const struct Edge {
+struct Edge {
     int adjacentNodeIndex;
     int distance;
 };

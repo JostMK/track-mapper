@@ -36,3 +36,11 @@
 
 # CLion IDE config
 /.idea
+
+# FMI graph files - can get very large
+*.fmi
+# Keep small toy graph for testing
+!toy-graph.fmi
+
+# Dijkstra check test files
+data/fmi-graph/dijkstra-query-checks/*

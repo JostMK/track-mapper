@@ -5,8 +5,6 @@ set(CMAKE_CXX_STANDARD 23)
 
 add_executable(track_mapper main.cpp
         src/graphs/IGraph.h
-        src/graphs/FMIGraph.h
-        src/graphs/FMIGraph.cpp
         src/graphs/DijkstraPathfinding.h
         src/graphs/DijkstraPathfinding.cpp
         src/graphs/BasicGraph.h

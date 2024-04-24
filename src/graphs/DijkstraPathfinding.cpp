@@ -13,9 +13,9 @@ DijkstraPathfinding::DijkstraPathfinding(const IGraph &graph) : graph(graph) {
 }
 
 Path DijkstraPathfinding::CalculatePath(int startNodeIndex, int targetNodeIndex) {
-    std::fill_n(&predecessors, graph.GetNodeCount(), -1);
-    std::fill_n(&distances, graph.GetNodeCount(), std::numeric_limits<int>::max());
+    //std::fill_n(&predecessors, graph.GetNodeCount(), -1);
+    //std::fill_n(&distances, graph.GetNodeCount(), std::numeric_limits<int>::max());
 
-    std::priority_queue<Edge>();
+    //std::priority_queue<Edge>();
 }
 

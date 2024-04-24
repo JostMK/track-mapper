@@ -17,12 +17,12 @@ BasicGraph FMIGraphReader::read(std::string &filePath) {
         throw std::runtime_error("Could not open file");
     }
 
-    // header section - 7 lines of metadata:
+    // header section - metadata followed by an empty line
     std::string line;
-    // skipping unrelevant data
-    while(std::getline(fileReadStream, line)) {
-        if(line.empty()) // header section is seperated by newline at the end
-            break;
+    // skipping metadata
+    while (std::getline(fileReadStream, line)) {
+        // header section is terminated by an empty line
+        if (line.empty()) break;
     }
 
     int nodeCount;
@@ -34,9 +34,9 @@ BasicGraph FMIGraphReader::read(std::string &filePath) {
     std::getline(fileReadStream, line); // get remaining new line symbol
     // TODO: check int limits
 
-    std::unique_ptr<Location[]> nodeLocations;
-    std::unique_ptr<int[]> edgesLookupIndices;
-    std::unique_ptr<Edge[]> edges;
+    std::unique_ptr<Location[]> nodeLocations(new Location[nodeCount]);
+    std::unique_ptr<int[]> edgesLookupIndices(new int[nodeCount + 1]); // +1 dummy entry for simplified algorithm
+    std::unique_ptr<Edge[]> edges(new Edge[edgeCount]);
 
     std::cout << "Loading graph with " << nodeCount << " nodes and " << edgeCount << " edges.." << std::endl;
     auto startTime = std::chrono::high_resolution_clock::now();
@@ -44,59 +44,52 @@ BasicGraph FMIGraphReader::read(std::string &filePath) {
     // node section - all the nodes line by line
     std::cout << "Loading nodes.." << std::endl;
     {
-        nodeLocations.reserve(nodeCount);
-
-        int32_t nodeId;
-        int64_t osmId;
+        int nodeId, osmId;
         double lat, lon;
-        int32_t elev;
-        // assumes nodeIds linearly counts up from 0 to nodeCount-1
+        // assumes lines are sorted by nodeId
         for (int i = 0; i < nodeCount; ++i) {
             //TODO: add eof check
             std::getline(fileReadStream, line);
             std::stringstream lineStream(line);
-            lineStream >> nodeId >> osmId >> lat >> lon >> elev;
-            nodeLocations.emplace_back(lat, lon);
-        }
+            lineStream >> nodeId >> osmId >> lat >> lon;
+            nodeLocations[i] = {lat, lon};
+        };
     }
 
     //edge section - all the edges line by line
     std::cout << "Loading edges.." << std::endl;
     {
-        edgeListLookup.reserve(nodeCount + 1); // one dummy element at the end for simpler retrival algorithm
-        edges.reserve(edgeCount);
-        int lastIndex = -1;
+        int lastNodeIndex = -1;
         int curEdgeIndex = 0;
 
-        int32_t source;
-        int32_t target;
-        int32_t weight;
-        int32_t type;
+        int source, target, weight;
         // assumes edges are sorted by source node
         for (int i = 0; i < edgeCount; ++i) {
             //TODO: add eof check
             std::getline(fileReadStream, line);
             std::stringstream lineStream(line);
-            lineStream >> source >> target >> weight >> type;
+            lineStream >> source >> target >> weight;
 
-            if(lastIndex != source) {
-                for (int j = lastIndex + 1; j <= source; j++) {
-                    edgeListLookup.push_back(curEdgeIndex);
+            if (lastNodeIndex != source) {
+                for (int j = lastNodeIndex + 1; j <= source; j++) {
+                    edgesLookupIndices[j] = curEdgeIndex;
                 }
-                lastIndex = source;
+                lastNodeIndex = source;
             }
 
-            edges.emplace_back(target, weight);
+            edges[i] = {target, weight};
             curEdgeIndex++;
         }
-        for (int j = lastIndex + 1; j <= nodeCount; j++) {
-            edgeListLookup.push_back(static_cast<int>(edgeCount));
+        // fill all entries without edges at the back (including the dummy entry) with the edgeCount for simplified
+        // retrieval algorithm
+        for (int j = lastNodeIndex + 1; j <= nodeCount; j++) {
+            edgesLookupIndices[j] = edgeCount;
         }
     }
 
     auto endTime = std::chrono::high_resolution_clock::now();
     auto loadTimeS = std::chrono::duration_cast<std::chrono::seconds>(endTime - startTime);
     std::cout << "Loaded graph in " << loadTimeS.count() << "s" << std::endl;
-}
-}
 
+    return {nodeCount, edgeCount, std::move(nodeLocations), std::move(edgesLookupIndices), std::move(edges)};
+}
