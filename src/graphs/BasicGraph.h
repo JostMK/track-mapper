@@ -9,7 +9,7 @@
 #include "IGraph.h"
 
 
-class BasicGraph final : IGraph {
+class BasicGraph final : public IGraph {
 public:
     BasicGraph(int nodeCount, int edgeCount, std::unique_ptr<Location[]> nodeLocations,
                std::unique_ptr<int[]> edgesLookupIndices, std::unique_ptr<Edge[]> edges);
