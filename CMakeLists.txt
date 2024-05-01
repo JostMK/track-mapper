@@ -4,7 +4,10 @@ project(track_mapper)
 set(CMAKE_CXX_STANDARD 23)
 
 add_executable(track_mapper main.cpp
-        src/graphs/Graph.h
-        src/graphs/FMIGraph.h
-        src/graphs/FMIGraph.cpp
+        src/graphs/IGraph.h
+        src/graphs/DijkstraPathfinding.h
+        src/graphs/DijkstraPathfinding.cpp
+        src/graphs/BasicGraph.h
+        src/graphs/BasicGraph.cpp
+        src/graphs/FMIGraphReader.cpp
 )
