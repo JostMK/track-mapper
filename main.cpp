@@ -74,11 +74,11 @@ static void QueryShortestPath(BasicGraph& graph){
 
         auto startTime = std::chrono::high_resolution_clock::now();
 
-        auto path = dijkstra.CalculatePath(startNodeIndex, targetNodeIndex);
+        auto [path, distance] = dijkstra.CalculatePath(startNodeIndex, targetNodeIndex);
 
         auto endTime = std::chrono::high_resolution_clock::now();
         auto loadTimeS = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime);
         std::cout << "Query in " << loadTimeS.count() << "ms" << std::endl;
-        std::cout << "Distance: " << path.distance << std::endl;
+        std::cout << "Distance: " << distance << std::endl;
     }
 }

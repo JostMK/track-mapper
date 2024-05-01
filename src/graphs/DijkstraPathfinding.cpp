@@ -13,7 +13,7 @@ DijkstraPathfinding::DijkstraPathfinding(const IGraph &graph) : graph(graph) {
     distances = std::make_unique<int[]>(graph.GetNodeCount());
 }
 
-Path DijkstraPathfinding::CalculatePath(int startNodeIndex, int targetNodeIndex) {
+Path DijkstraPathfinding::CalculatePath(const int startNodeIndex, const int targetNodeIndex) {
     std::fill_n(predecessors.get(), graph.GetNodeCount(), -1);
     std::fill_n(distances.get(), graph.GetNodeCount(), std::numeric_limits<int>::max());
 
@@ -38,8 +38,7 @@ Path DijkstraPathfinding::CalculatePath(int startNodeIndex, int targetNodeIndex)
             break;
         }
 
-        auto edges = graph.GetEdges(curNodeIndex);
-        for (auto [edgeTarget, edgeDistance]: edges) {
+        for (auto [edgeTarget, edgeDistance]: graph.GetEdges(curNodeIndex)) {
             int newDistance = curDistance + edgeDistance;
             if (distances[edgeTarget] <= newDistance) {
                 // edge is already reachable with shorter path
@@ -67,7 +66,7 @@ Path DijkstraPathfinding::CalculatePath(int startNodeIndex, int targetNodeIndex)
     }
     path.push_back(startNodeIndex);
 
-    std::reverse(path.begin(), path.end());
+    std::ranges::reverse(path);
 
     return {path, distances[targetNodeIndex]};
 }

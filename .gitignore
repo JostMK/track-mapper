@@ -38,9 +38,9 @@
 /.idea
 
 # FMI graph files - can get very large
-*.fmi
-# Keep small toy graph for testing
-!toy-graph.fmi
-
+/data/fmi-graph/*
 # Dijkstra check test files
 data/fmi-graph/dijkstra-query-checks/*
+# Keep small toy graph for testing
+!/data/fmi-graph/toy-graph.fmi
+!/data/fmi-graph/source.txt
