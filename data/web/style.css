@@ -1,0 +1,54 @@
+:root {
+    --header-size: 50px;
+}
+
+#map {
+    height: 100%;
+}
+
+#git-button {
+    height: 100%;
+
+    color: black;
+    text-decoration: none;
+
+    display: flex;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 10px;
+}
+#git-button img{
+    height: 60%;
+}
+
+.spacer {
+    flex-grow: 1;
+}
+
+html,
+body {
+    margin: 0;
+    padding: 0;
+    font-family: sans-serif;
+
+    height: 100%;
+}
+
+header {
+    height: var(--header-size);
+    background-color: antiquewhite;
+    padding-left: var(--header-size);
+    padding-right: var(--header-size);
+
+    display: flex;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 10px;
+}
+
+
+main {
+    height: calc(100% - var(--header-size));
+}
