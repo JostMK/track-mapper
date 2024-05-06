@@ -10,4 +10,9 @@ add_executable(track_mapper main.cpp
         src/graphs/BasicGraph.h
         src/graphs/BasicGraph.cpp
         src/graphs/FMIGraphReader.cpp
+        src/web/TestWebApp.cpp
 )
+
+# 'ws2_32' 'wsock32' needed when using MINGW on windows: https://github.com/CrowCpp/Crow/issues/759
+find_package(Crow CONFIG REQUIRED)
+target_link_libraries(track_mapper PRIVATE Crow::Crow asio::asio ws2_32 wsock32)

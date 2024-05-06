@@ -1,28 +1,41 @@
 
 #include <chrono>
 #include <iostream>
+
 #include "src/graphs/FMIGraphReader.h"
 #include "src/graphs/DijkstraPathfinding.h"
+#include "src/web/TestWebApp.h"
 
-static void PrintGraph(BasicGraph& graph);
-static void QueryGraph(BasicGraph& graph);
-static void QueryShortestPath(BasicGraph& graph);
+static void TestWebApp();
+static void TestGraphApp();
+static void PrintGraph(const BasicGraph& graph);
+static void QueryGraph(const BasicGraph& graph);
+static void QueryShortestPath(const BasicGraph& graph);
 
 int main()
 {
-    std::cout << "Enter Path to fmi file:" << std::endl;
-
-    std::string filePath;
-    std::cin>>filePath;
-    BasicGraph graph = FMIGraphReader::read(filePath);
-
-    QueryShortestPath(graph);
+    TestWebApp();
 
     return 0;
 }
 
+void TestWebApp() {
+    TestWebApp::Start();
+}
 
-static void PrintGraph(BasicGraph& graph){
+
+static void TestGraphApp() {
+    std::cout << "Enter Path to fmi file:" << std::endl;
+
+    std::string filePath;
+    std::cin>>filePath;
+    const BasicGraph graph = FMIGraphReader::read(filePath);
+
+    QueryShortestPath(graph);
+}
+
+
+static void PrintGraph(const BasicGraph& graph){
     for (int i = 0; i < graph.GetNodeCount(); ++i) {
         auto [latitude, longitude] = graph.GetLocation(i);
         std::cout << "Location " << i << ": " << latitude << " : " << longitude << std::endl;
@@ -35,7 +48,7 @@ static void PrintGraph(BasicGraph& graph){
     }
 }
 
-static void QueryGraph(BasicGraph& graph){
+static void QueryGraph(const BasicGraph& graph){
     while(true) {
         std::cout << "Enter node id or enter -1 to exit:" << std::endl;
         int nodeIndex;
@@ -54,7 +67,7 @@ static void QueryGraph(BasicGraph& graph){
     }
 }
 
-static void QueryShortestPath(BasicGraph& graph){
+static void QueryShortestPath(const BasicGraph& graph){
     DijkstraPathfinding dijkstra(graph);
 
     while(true) {
