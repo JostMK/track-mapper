@@ -20,7 +20,13 @@ int main()
 }
 
 void TestWebApp() {
-    TestWebApp::Start();
+    std::cout << "Enter Path to fmi file:" << std::endl;
+
+    std::string filePath;
+    std::cin>>filePath;
+    const BasicGraph graph = FMIGraphReader::read(filePath);
+
+    TestWebApp::Start(graph);
 }
 
 

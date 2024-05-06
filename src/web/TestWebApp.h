@@ -4,12 +4,12 @@
 
 #ifndef TESTWEBAPP_H
 #define TESTWEBAPP_H
-
+#include "../graphs/BasicGraph.h"
 
 
 class TestWebApp {
 public:
-    static void Start();
+    static void Start(const BasicGraph& graph);
 };
 
 

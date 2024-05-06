@@ -9,15 +9,16 @@
 #include <algorithm>
 
 DijkstraPathfinding::DijkstraPathfinding(const IGraph &graph) : graph(graph) {
-    predecessors = std::make_unique<int[]>(graph.GetNodeCount());
-    distances = std::make_unique<int[]>(graph.GetNodeCount());
 }
 
-Path DijkstraPathfinding::CalculatePath(const int startNodeIndex, const int targetNodeIndex) {
+Path DijkstraPathfinding::CalculatePath(const int startNodeIndex, const int targetNodeIndex) const {
+    auto predecessors = std::make_unique<int[]>(graph.GetNodeCount());
+    auto distances = std::make_unique<int[]>(graph.GetNodeCount());
+
     std::fill_n(predecessors.get(), graph.GetNodeCount(), -1);
     std::fill_n(distances.get(), graph.GetNodeCount(), std::numeric_limits<int>::max());
 
-    std::priority_queue<PriorityQueueEntry, std::vector<PriorityQueueEntry>, std::greater<>> queue;
+    std::priority_queue<PriorityQueueEntry, std::vector<PriorityQueueEntry>, std::greater<> > queue;
 
     distances[startNodeIndex] = 0;
     queue.emplace(startNodeIndex, 0);
@@ -53,14 +54,14 @@ Path DijkstraPathfinding::CalculatePath(const int startNodeIndex, const int targ
 
     // -- reconstruct path --
 
-    if(predecessors[targetNodeIndex] == -1){
+    if (predecessors[targetNodeIndex] == -1) {
         // no path was found
         return Path::invalid();
     }
 
     std::vector<int> path;
     int curNodeIndex = targetNodeIndex;
-    while (curNodeIndex != startNodeIndex){
+    while (curNodeIndex != startNodeIndex) {
         path.push_back(curNodeIndex);
         curNodeIndex = predecessors[curNodeIndex];
     }
@@ -70,4 +71,3 @@ Path DijkstraPathfinding::CalculatePath(const int startNodeIndex, const int targ
 
     return {path, distances[targetNodeIndex]};
 }
-

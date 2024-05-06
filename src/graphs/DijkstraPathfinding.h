@@ -35,12 +35,10 @@ class DijkstraPathfinding {
 public:
     explicit DijkstraPathfinding(const IGraph &graph);
 
-    Path CalculatePath(int startNodeIndex, int targetNodeIndex);
+    [[nodiscard]] Path CalculatePath(int startNodeIndex, int targetNodeIndex) const;
 
 private:
     const IGraph &graph;
-    std::unique_ptr<int[]> predecessors;
-    std::unique_ptr<int[]> distances;
 };
 
 
