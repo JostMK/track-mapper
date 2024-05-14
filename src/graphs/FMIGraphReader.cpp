@@ -8,6 +8,10 @@
 #include <fstream>
 #include <iostream>
 
+static Location parseNode(const std::string &line);
+
+static std::pair<int, Edge> parseEdge(const std::string &line);
+
 BasicGraph FMIGraphReader::read(std::string &filePath) {
     // Implementation follows: https://github.com/fmi-alg/OsmGraphCreator/blob/master/readers/fmitextreader.cpp
     // Details from FmiTextGraphWriter in: https://github.com/fmi-alg/OsmGraphCreator/blob/master/creator/GraphWriter.cpp
@@ -42,33 +46,24 @@ BasicGraph FMIGraphReader::read(std::string &filePath) {
     auto startTime = std::chrono::high_resolution_clock::now();
 
     // node section - all the nodes line by line
-    std::cout << "Loading nodes.." << std::endl;
-    {
-        int nodeId, osmId;
-        double lat, lon;
+    std::cout << "Loading nodes.." << std::endl; {
         // assumes lines are sorted by nodeId
         for (int i = 0; i < nodeCount; ++i) {
-            //TODO: add eof check
             std::getline(fileReadStream, line);
-            std::stringstream lineStream(line);
-            lineStream >> nodeId >> osmId >> lat >> lon;
-            nodeLocations[i] = {lat, lon};
+            nodeLocations[i] = parseNode(line);
         };
     }
 
     //edge section - all the edges line by line
-    std::cout << "Loading edges.." << std::endl;
-    {
+    std::cout << "Loading edges.." << std::endl; {
         int lastNodeIndex = -1;
         int curEdgeIndex = 0;
 
         int source, target, weight;
         // assumes edges are sorted by source node
         for (int i = 0; i < edgeCount; ++i) {
-            //TODO: add eof check
             std::getline(fileReadStream, line);
-            std::stringstream lineStream(line);
-            lineStream >> source >> target >> weight;
+            auto [source, edge] = parseEdge(line);
 
             if (lastNodeIndex != source) {
                 for (int j = lastNodeIndex + 1; j <= source; j++) {
@@ -77,7 +72,7 @@ BasicGraph FMIGraphReader::read(std::string &filePath) {
                 lastNodeIndex = source;
             }
 
-            edges[i] = {target, weight};
+            edges[i] = edge;
             curEdgeIndex++;
         }
         // fill all entries without edges at the back (including the dummy entry) with the edgeCount for simplified
@@ -92,4 +87,34 @@ BasicGraph FMIGraphReader::read(std::string &filePath) {
     std::cout << "Loaded graph in " << loadTimeS.count() << "s" << std::endl;
 
     return {nodeCount, edgeCount, std::move(nodeLocations), std::move(edgesLookupIndices), std::move(edges)};
+}
+
+static std::vector<int> find_all_occurances(const std::string_view &view, const char target) {
+    std::vector<int> occurances;
+    for (int i = 0; i < view.size(); ++i) {
+        if (view.at(i) == target) {
+            occurances.push_back(i);
+        }
+    }
+    return occurances;
+}
+
+static Location parseNode(const std::string &line) {
+    const size_t firstSpacePos = line.find_first_of(' ');
+    const size_t secondSpacePos = line.find_first_of(' ', firstSpacePos + 1);
+    const size_t thirdSpacePos = line.find_first_of(' ', secondSpacePos + 1);
+    const size_t fourthSpacePos = line.find_first_of(' ', thirdSpacePos + 1);
+    const double lat = std::stod(line.substr(secondSpacePos, thirdSpacePos - secondSpacePos));
+    const double lon = std::stod(line.substr(thirdSpacePos, fourthSpacePos - thirdSpacePos));
+    return {lat, lon};
+}
+
+static std::pair<int, Edge> parseEdge(const std::string &line) {
+    const size_t firstSpacePos = line.find_first_of(' ');
+    const size_t secondSpacePos = line.find_first_of(' ', firstSpacePos + 1);
+    const size_t thirdSpacePos = line.find_first_of(' ', secondSpacePos + 1);
+    const int source = std::stoi(line.substr(0, firstSpacePos));
+    const int target = std::stoi(line.substr(firstSpacePos, secondSpacePos - firstSpacePos));
+    const int weight = std::stoi(line.substr(secondSpacePos, thirdSpacePos - secondSpacePos));
+    return {source, {target, weight}};
 }
