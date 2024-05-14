@@ -9,7 +9,7 @@ L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
 }).addTo(map);
 
-map.on("click", addPosition);
+map.on("click", temp2);
 
 let positions = [];
 let routePolyLines = [];
@@ -27,6 +27,15 @@ async function temp(e){
     }else{
         routePolyLines.push(L.polyline(path, {color: "red"}).addTo(map));
     }
+}
+
+async function temp2(e){
+    let latLng = clampPosition(e.latlng);
+    let cellIndex = await getCellIndex(latLng);
+    let nodes = await getNodesInCell(cellIndex);
+    nodes.forEach((n) => {
+        L.marker(n).addTo(map);
+    });
 }
 
 async function addPosition(e) {
@@ -78,6 +87,28 @@ async function getShortestPath(startNodeId, targetNodeId) {
         path.push(pos);
     }
     return path;
+}
+
+
+
+async function getCellIndex(latLng) {
+    const res = await fetch("/api/get_cell/" + latLng.lat + "/" + latLng.lng);
+    const json = await res.json();
+    return json["cellIndex"];
+}
+
+async function getNodesInCell(cellIndex) {
+    const res = await fetch("/api/get_nodes_in_cell/" + cellIndex);
+    const json = await res.json();
+    const nodes = [];
+    console.log("JSON RES: ",json)
+
+    const nodeIds = json["nodes"]
+    for (const index in nodeIds) {
+        const pos = await getNodeLocation(nodeIds[index]);
+        nodes.push(pos);
+    }
+    return nodes;
 }
 
 function clampPosition(latLng) {

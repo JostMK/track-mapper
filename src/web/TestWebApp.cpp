@@ -5,10 +5,12 @@
 #include "TestWebApp.h"
 #include "crow.h"
 #include "../graphs/DijkstraPathfinding.h"
+#include "../graphs/SimpleWorldGrid.h"
 
 
 void TestWebApp::Start(const BasicGraph &graph) {
     const DijkstraPathfinding pathfinding(graph);
+    const SimpleWorldGrid grid(graph, 0.01);
     const int graphSize = graph.GetNodeCount();
 
     crow::SimpleApp app;
@@ -17,7 +19,7 @@ void TestWebApp::Start(const BasicGraph &graph) {
     // REQ: latitude and longitude as double/double
     // RES: node id as json string
     CROW_ROUTE(app, "/api/get_node/<double>/<double>")
-    ([&graphSize](double lat, double lon) {
+    ([&graphSize](const double lat, const double lon) {
         // TODO: Allow to find closest node in graph
         crow::json::wvalue x;
         x["nodeId"] = std::rand() % graphSize;
@@ -46,6 +48,25 @@ void TestWebApp::Start(const BasicGraph &graph) {
         crow::json::wvalue x;
         x["distance"] = distance;
         x["nodes"] = nodeIds;
+        return x;
+    });
+
+    //TODO: Remove after testing
+    CROW_ROUTE(app, "/api/get_cell/<double>/<double>")
+    ([&grid](const double lat, const double lon) {
+        const int cellIndex = grid.GetCellIndexForLocation({lat, lon});
+
+        crow::json::wvalue x;
+        x["cellIndex"] = cellIndex;
+        return x;
+    });
+
+    CROW_ROUTE(app, "/api/get_nodes_in_cell/<int>")
+    ([&grid](const int cellIndex) {
+        const auto nodes = grid.GetNodeIndicesInCell(cellIndex);
+
+        crow::json::wvalue x;
+        x["nodes"] = nodes;
         return x;
     });
 

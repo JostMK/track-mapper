@@ -12,6 +12,9 @@ add_executable(track_mapper
         src/graphs/BasicGraph.cpp
         src/graphs/FMIGraphReader.cpp
         src/web/TestWebApp.cpp
+        src/graphs/IGrid.h
+        src/graphs/SimpleWorldGrid.h
+        src/graphs/SimpleWorldGrid.cpp
 )
 
 add_dependencies(track_mapper Webserver)

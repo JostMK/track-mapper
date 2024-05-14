@@ -5,8 +5,6 @@
 #ifndef DIJKSTRAPATHFINDING_H
 #define DIJKSTRAPATHFINDING_H
 
-#include <memory>
-
 #include "IGraph.h"
 
 struct Path {

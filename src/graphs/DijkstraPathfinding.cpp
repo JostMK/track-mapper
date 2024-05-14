@@ -7,6 +7,7 @@
 #include <limits>
 #include <queue>
 #include <algorithm>
+#include <memory>
 
 DijkstraPathfinding::DijkstraPathfinding(const IGraph &graph) : graph(graph) {
 }
