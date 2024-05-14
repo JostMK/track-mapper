@@ -20,7 +20,19 @@ void TestWebApp::Start(const BasicGraph &graph) {
     ([&graphSize](double lat, double lon) {
         // TODO: Allow to find closest node in graph
         crow::json::wvalue x;
-        x["node_id"] = std::rand() % graphSize;
+        x["nodeId"] = std::rand() % graphSize;
+        return x;
+    });
+
+    // get closest node to mouse click endpoint
+    // REQ: latitude and longitude as double/double
+    // RES: node id as json string
+    CROW_ROUTE(app, "/api/get_location/<int>")
+    ([&graph](const int node_id) {
+        auto [latitude, longitude] = graph.GetLocation(node_id);
+        crow::json::wvalue x;
+        x["lat"] = latitude;
+        x["lon"] = longitude;
         return x;
     });
 
@@ -29,11 +41,11 @@ void TestWebApp::Start(const BasicGraph &graph) {
     // RES: shortest path as json string
     CROW_ROUTE(app, "/api/get_path/<int>/<int>")
     ([&pathfinding](const int startNodeIndex, const int targetNodeIndex) {
-        auto [path, distance] = pathfinding.CalculatePath(startNodeIndex, targetNodeIndex);
+        auto [nodeIds, distance] = pathfinding.CalculatePath(startNodeIndex, targetNodeIndex);
 
         crow::json::wvalue x;
         x["distance"] = distance;
-        x["path"] = path;
+        x["nodes"] = nodeIds;
         return x;
     });
 

@@ -14,8 +14,8 @@ static void QueryShortestPath(const BasicGraph& graph);
 
 int main()
 {
+    //TestGraphApp();
     TestWebApp();
-
     return 0;
 }
 
@@ -74,7 +74,7 @@ static void QueryGraph(const BasicGraph& graph){
 }
 
 static void QueryShortestPath(const BasicGraph& graph){
-    DijkstraPathfinding dijkstra(graph);
+    const DijkstraPathfinding dijkstra(graph);
 
     while(true) {
         std::cout << "Enter start node id or enter -1 to exit:" << std::endl;
@@ -93,7 +93,7 @@ static void QueryShortestPath(const BasicGraph& graph){
 
         auto startTime = std::chrono::high_resolution_clock::now();
 
-        auto [path, distance] = dijkstra.CalculatePath(startNodeIndex, targetNodeIndex);
+        auto [nodeIds, distance] = dijkstra.CalculatePath(startNodeIndex, targetNodeIndex);
 
         auto endTime = std::chrono::high_resolution_clock::now();
         auto loadTimeS = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime);

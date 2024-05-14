@@ -10,10 +10,10 @@
 #include "IGraph.h"
 
 struct Path {
-    std::vector<int> path;
+    std::vector<int> nodeIds;
     int distance;
 
-    inline static Path invalid(){
+    static Path invalid() {
         return {std::vector<int>(), -1};
     }
 };
