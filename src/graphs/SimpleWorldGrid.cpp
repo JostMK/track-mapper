@@ -6,22 +6,24 @@
 
 #include <algorithm>
 #include <cmath>
+#include <queue>
 
 SimpleWorldGrid::SimpleWorldGrid(const IGraph &graph, const float resolution)
-    : m_Resolution(resolution),
+    : m_rGraph(graph),
+      m_Resolution(resolution),
       m_CellCountX(std::floor(360 / resolution)),
       m_CellCountY(std::floor(180 / resolution)),
       m_pNodeIndices(std::make_unique<int[]>(graph.GetNodeCount())),
       m_pCellLookupIndices(std::make_unique<int[]>(m_CellCountX * m_CellCountY + 1)) {
     // -- fill array with indices for the nodes --
-    std::vector<std::pair<int,int>> sorting;
+    std::vector<std::pair<int, int> > sorting;
     sorting.reserve(graph.GetNodeCount());
     for (int i = 0; i < graph.GetNodeCount(); ++i) {
         sorting.emplace_back(i, GetCellIndexForLocation(graph.GetLocation(i)));
     }
 
     // -- sort the node indices based on their cell index
-    std::ranges::sort(sorting, [this, &graph](const std::pair<int,int>& left, const std::pair<int,int>& right) {
+    std::ranges::sort(sorting, [this, &graph](const std::pair<int, int> &left, const std::pair<int, int> &right) {
         return left.second < right.second;
     });
     for (int i = 0; i < graph.GetNodeCount(); ++i) {
@@ -44,9 +46,34 @@ SimpleWorldGrid::SimpleWorldGrid(const IGraph &graph, const float resolution)
     }
 }
 
-int SimpleWorldGrid::GetClosestNode(Location location) const {
-    // TODO: implement
-    return 0;
+int SimpleWorldGrid::GetClosestNode(const Location location) const {
+    std::vector<int> checkedCells;
+    std::queue<int> cellQueue;
+    cellQueue.push(GetCellIndexForLocation(location));
+
+    double minDist = std::numeric_limits<double>::max();
+    int minDistNodeIndex = -1;
+
+    while (!cellQueue.empty()) {
+        int cellIndex = cellQueue.front();
+        cellQueue.pop();
+        checkedCells.push_back(cellIndex);
+
+        for (const int nodeIndex: GetNodeIndicesInCell(cellIndex)) {
+            auto [nodeLatitude, nodeLongitude] = m_rGraph.GetLocation(nodeIndex);
+            const double sqrDist = std::pow(location.latitude - nodeLatitude, 2) +
+                                   std::pow(location.longitude - nodeLongitude, 2);
+
+            if (sqrDist < minDist) {
+                minDist = sqrDist;
+                minDistNodeIndex = nodeIndex;
+            }
+        }
+
+        //TODO: check cells progressively outwards until no closer node was found
+    }
+
+    return minDistNodeIndex;
 }
 
 int SimpleWorldGrid::GetCellIndexForLocation(const Location &location) const {

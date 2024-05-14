@@ -19,10 +19,11 @@ void TestWebApp::Start(const BasicGraph &graph) {
     // REQ: latitude and longitude as double/double
     // RES: node id as json string
     CROW_ROUTE(app, "/api/get_node/<double>/<double>")
-    ([&graphSize](const double lat, const double lon) {
-        // TODO: Allow to find closest node in graph
+    ([&grid](const double lat, const double lon) {
+        const int closestNode = grid.GetClosestNode({lat, lon});
+
         crow::json::wvalue x;
-        x["nodeId"] = std::rand() % graphSize;
+        x["nodeId"] = closestNode;
         return x;
     });
 
@@ -32,6 +33,7 @@ void TestWebApp::Start(const BasicGraph &graph) {
     CROW_ROUTE(app, "/api/get_location/<int>")
     ([&graph](const int node_id) {
         auto [latitude, longitude] = graph.GetLocation(node_id);
+
         crow::json::wvalue x;
         x["lat"] = latitude;
         x["lon"] = longitude;
@@ -48,25 +50,6 @@ void TestWebApp::Start(const BasicGraph &graph) {
         crow::json::wvalue x;
         x["distance"] = distance;
         x["nodes"] = nodeIds;
-        return x;
-    });
-
-    //TODO: Remove after testing
-    CROW_ROUTE(app, "/api/get_cell/<double>/<double>")
-    ([&grid](const double lat, const double lon) {
-        const int cellIndex = grid.GetCellIndexForLocation({lat, lon});
-
-        crow::json::wvalue x;
-        x["cellIndex"] = cellIndex;
-        return x;
-    });
-
-    CROW_ROUTE(app, "/api/get_nodes_in_cell/<int>")
-    ([&grid](const int cellIndex) {
-        const auto nodes = grid.GetNodeIndicesInCell(cellIndex);
-
-        crow::json::wvalue x;
-        x["nodes"] = nodes;
         return x;
     });
 

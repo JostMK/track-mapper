@@ -15,18 +15,17 @@ public:
 
     [[nodiscard]] int GetClosestNode(Location location) const override;
 
-    //TODO: move back to private after testing
-    [[nodiscard]] int GetCellIndexForLocation(const Location& location) const;
-    [[nodiscard]] std::vector<int> GetNodeIndicesInCell(int cellIndex) const;
-
 private:
+    const IGraph &m_rGraph;
     const float m_Resolution;
     const int m_CellCountX;
     const int m_CellCountY;
     const std::unique_ptr<int[]> m_pNodeIndices;
     const std::unique_ptr<int[]> m_pCellLookupIndices;
 
+    [[nodiscard]] int GetCellIndexForLocation(const Location &location) const;
 
+    [[nodiscard]] std::vector<int> GetNodeIndicesInCell(int cellIndex) const;
 };
 
 

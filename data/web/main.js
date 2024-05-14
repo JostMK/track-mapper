@@ -9,7 +9,7 @@ L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
 }).addTo(map);
 
-map.on("click", temp2);
+map.on("click", addPosition);
 
 let positions = [];
 let routePolyLines = [];
@@ -29,16 +29,8 @@ async function temp(e){
     }
 }
 
-async function temp2(e){
-    let latLng = clampPosition(e.latlng);
-    let cellIndex = await getCellIndex(latLng);
-    let nodes = await getNodesInCell(cellIndex);
-    nodes.forEach((n) => {
-        L.marker(n).addTo(map);
-    });
-}
-
 async function addPosition(e) {
+    console.log(e)
     let latLng = clampPosition(e.latlng);
     let nodeId = await getClosestNodeToPosition(latLng.lat, latLng.lng);
     console.log("Node ID: " + nodeId)
