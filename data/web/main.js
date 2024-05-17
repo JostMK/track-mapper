@@ -16,26 +16,24 @@ let routePolyLines = [];
 
 // TODO: investigate and fix distance bug in dijkstra
 async function temp(e){
-    let nodeLocation = await getNodeLocation(12412);
+    let nodeLocation = await getNodeLocation(8371827);
     L.marker(nodeLocation).addTo(map);
-    nodeLocation = await getNodeLocation(4343);
+    nodeLocation = await getNodeLocation(16743653);
     L.marker(nodeLocation).addTo(map);
 
-    let path = await getShortestPath(12412, 4343)
-    if(path.length === 0){
-        positions.pop(); // remove last added position because it is invalid
-    }else{
-        routePolyLines.push(L.polyline(path, {color: "red"}).addTo(map));
-    }
+    let path = await getShortestPath(8371827, 16743653)
+    routePolyLines.push(L.polyline(path, {color: "red"}).addTo(map));
 }
 
 async function addPosition(e) {
-    console.log(e)
     let latLng = clampPosition(e.latlng);
     let nodeId = await getClosestNodeToPosition(latLng.lat, latLng.lng);
     console.log("Node ID: " + nodeId)
     let nodeLocation = await getNodeLocation(nodeId);
     console.log("Location: ", nodeLocation)
+
+    if(nodeId === -1)
+        return;
 
     positions.push(nodeId);
     L.marker(nodeLocation).addTo(map);
@@ -67,41 +65,17 @@ async function getShortestPath(startNodeId, targetNodeId) {
     const res = await fetch("/api/get_path/" + startNodeId + "/" + targetNodeId);
     const json = await res.json();
     const path = [];
-    console.log("JSON RES: ",json)
 
     if (json["distance"] === -1)
         return path; // no path found
 
-    const nodeIds = json["nodes"]
-    for (const index in nodeIds) {
-        const pos = await getNodeLocation(nodeIds[index]);
-        console.log("id: " + nodeIds[index], pos)
-        path.push(pos);
-    }
+    json["nodes"].forEach((node) => {
+        path.push(L.latLng(node["lat"], node["lon"]));
+    });
+
     return path;
 }
 
-
-
-async function getCellIndex(latLng) {
-    const res = await fetch("/api/get_cell/" + latLng.lat + "/" + latLng.lng);
-    const json = await res.json();
-    return json["cellIndex"];
-}
-
-async function getNodesInCell(cellIndex) {
-    const res = await fetch("/api/get_nodes_in_cell/" + cellIndex);
-    const json = await res.json();
-    const nodes = [];
-    console.log("JSON RES: ",json)
-
-    const nodeIds = json["nodes"]
-    for (const index in nodeIds) {
-        const pos = await getNodeLocation(nodeIds[index]);
-        nodes.push(pos);
-    }
-    return nodes;
-}
 
 function clampPosition(latLng) {
     if (latLng.lng < -180)

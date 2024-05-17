@@ -11,9 +11,9 @@
 void TestWebApp::Start(const BasicGraph &graph) {
     const DijkstraPathfinding pathfinding(graph);
     const SimpleWorldGrid grid(graph, 0.01);
-    const int graphSize = graph.GetNodeCount();
 
     crow::SimpleApp app;
+    //app.loglevel(crow::LogLevel::Debug);
 
     // get closest node to mouse click endpoint
     // REQ: latitude and longitude as double/double
@@ -40,16 +40,28 @@ void TestWebApp::Start(const BasicGraph &graph) {
         return x;
     });
 
-    // get shortest path between two nodes
+    // get the shortest path between two nodes
     // REQ: start and target node id as int/int
     // RES: shortest path as json string
     CROW_ROUTE(app, "/api/get_path/<int>/<int>")
-    ([&pathfinding](const int startNodeIndex, const int targetNodeIndex) {
+    ([&pathfinding, &graph](const int startNodeIndex, const int targetNodeIndex) {
         auto [nodeIds, distance] = pathfinding.CalculatePath(startNodeIndex, targetNodeIndex);
+
+        std::vector<crow::json::wvalue> path;
+        path.reserve(nodeIds.size());
+        for (auto nodeId : nodeIds){
+            auto location = graph.GetLocation(nodeId);
+            crow::json::wvalue node;
+            node["nodeId"] = nodeId;
+            node["lat"] = location.latitude;
+            node["lon"] = location.longitude;
+
+            path.push_back(node);
+        }
 
         crow::json::wvalue x;
         x["distance"] = distance;
-        x["nodes"] = nodeIds;
+        x["nodes"] = std::move(path);
         return x;
     });
 
