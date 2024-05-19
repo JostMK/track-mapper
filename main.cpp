@@ -1,7 +1,8 @@
 
 #include <chrono>
 #include <iostream>
-
+#include "src/graphs/FMIGraphReader.h"
+#include "src/graphs/DijkstraPathfinding.h"
 #include "src/graphs/FMIGraphReader.h"
 #include "src/graphs/DijkstraPathfinding.h"
 #include "src/web/TestWebApp.h"
