@@ -3,26 +3,46 @@
 #include <iostream>
 #include "src/graphs/FMIGraphReader.h"
 #include "src/graphs/DijkstraPathfinding.h"
+#include "src/graphs/FMIGraphReader.h"
+#include "src/graphs/DijkstraPathfinding.h"
+#include "src/web/TestWebApp.h"
 
-static void PrintGraph(BasicGraph& graph);
-static void QueryGraph(BasicGraph& graph);
-static void QueryShortestPath(BasicGraph& graph);
+static void TestWebApp();
+static void TestGraphApp();
+static void PrintGraph(const BasicGraph& graph);
+static void QueryGraph(const BasicGraph& graph);
+static void QueryShortestPath(const BasicGraph& graph);
 
 int main()
 {
+    //TestGraphApp();
+    TestWebApp();
+    return 0;
+}
+
+void TestWebApp() {
     std::cout << "Enter Path to fmi file:" << std::endl;
 
     std::string filePath;
     std::cin>>filePath;
-    BasicGraph graph = FMIGraphReader::read(filePath);
+    const BasicGraph graph = FMIGraphReader::read(filePath);
 
-    QueryShortestPath(graph);
-
-    return 0;
+    TestWebApp::Start(graph);
 }
 
 
-static void PrintGraph(BasicGraph& graph){
+static void TestGraphApp() {
+    std::cout << "Enter Path to fmi file:" << std::endl;
+
+    std::string filePath;
+    std::cin>>filePath;
+    const BasicGraph graph = FMIGraphReader::read(filePath);
+
+    QueryShortestPath(graph);
+}
+
+
+static void PrintGraph(const BasicGraph& graph){
     for (int i = 0; i < graph.GetNodeCount(); ++i) {
         auto [latitude, longitude] = graph.GetLocation(i);
         std::cout << "Location " << i << ": " << latitude << " : " << longitude << std::endl;
@@ -35,7 +55,7 @@ static void PrintGraph(BasicGraph& graph){
     }
 }
 
-static void QueryGraph(BasicGraph& graph){
+static void QueryGraph(const BasicGraph& graph){
     while(true) {
         std::cout << "Enter node id or enter -1 to exit:" << std::endl;
         int nodeIndex;
@@ -54,8 +74,8 @@ static void QueryGraph(BasicGraph& graph){
     }
 }
 
-static void QueryShortestPath(BasicGraph& graph){
-    DijkstraPathfinding dijkstra(graph);
+static void QueryShortestPath(const BasicGraph& graph){
+    const DijkstraPathfinding dijkstra(graph);
 
     while(true) {
         std::cout << "Enter start node id or enter -1 to exit:" << std::endl;
@@ -74,7 +94,7 @@ static void QueryShortestPath(BasicGraph& graph){
 
         auto startTime = std::chrono::high_resolution_clock::now();
 
-        auto [path, distance] = dijkstra.CalculatePath(startNodeIndex, targetNodeIndex);
+        auto [nodeIds, distance] = dijkstra.CalculatePath(startNodeIndex, targetNodeIndex);
 
         auto endTime = std::chrono::high_resolution_clock::now();
         auto loadTimeS = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime);
