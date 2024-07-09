@@ -75,10 +75,10 @@ maps based on real-world data.
     - [ ] Name meshes following KsEditor naming convention
     - [ ] Export as FBX file[^research_needed]
 
-[^terrain_mesh] Mesh without collision only for visuals in the background, based on geo data
+[^terrain_mesh]: Mesh without collision only for visuals in the background, based on geo data
 
-[^grass_mesh] Mesh with collision directly next to the road, low detail
+[^grass_mesh]: Mesh with collision directly next to the road, low detail
 
-[^road_mesh] Mesh with collision representing the road, very detailed
+[^road_mesh]: Mesh with collision representing the road, very detailed
 
-[^research_needed] This feature still needs some research into feasibility
+[^research_needed]: This feature still needs some research into feasibility
