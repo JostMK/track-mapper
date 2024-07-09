@@ -4,7 +4,7 @@
 
 #ifndef TESTWEBAPP_H
 #define TESTWEBAPP_H
-#include "../graphs/BasicGraph.h"
+#include "../graph/BasicGraph.h"
 
 
 class TestWebApp {

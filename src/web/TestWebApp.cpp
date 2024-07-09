@@ -4,8 +4,8 @@
 
 #include "TestWebApp.h"
 #include "crow.h"
-#include "../graphs/DijkstraPathfinding.h"
-#include "../graphs/SimpleWorldGrid.h"
+#include "../graph/DijkstraPathfinding.h"
+#include "../graph/SimpleWorldGrid.h"
 
 
 void TestWebApp::Start(const BasicGraph &graph) {
