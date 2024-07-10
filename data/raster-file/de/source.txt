@@ -1,0 +1,4 @@
+Datenquelle: LGL, www.lgl-bw.de, dl-de/by-2-0
+Lizenz: http://www.govdata.de/dl-de/by-2-0
+Produkt: https://www.lgl-bw.de/Produkte/3D-Produkte/Digitale-Gelaendemodelle/
+Downloadquelle: https://opengeodata.lgl-bw.de/#/(sidenav:product/3)

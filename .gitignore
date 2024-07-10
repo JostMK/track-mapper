@@ -44,3 +44,9 @@ data/fmi-graph/dijkstra-query-checks/*
 # Keep small toy graph for testing
 !/data/fmi-graph/toy-graph.fmi
 !/data/fmi-graph/source.txt
+
+# Raster files
+/data/raster-file/**
+# Keep data from de lidar 1m dataset as sample
+!/data/raster-file/**/
+!/data/raster-file/de/**

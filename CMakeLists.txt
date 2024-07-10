@@ -4,5 +4,5 @@ project(TrackMapper)
 set(CMAKE_CXX_STANDARD 23)
 
 add_subdirectory(src/graph)
-
+add_subdirectory(src/mesh)
 add_subdirectory(src/web)

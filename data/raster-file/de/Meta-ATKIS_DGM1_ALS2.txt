@@ -1,0 +1,1 @@
+https://metadaten.geoportal-bw.de/geonetwork/srv/api/records/8ca22d63-e92d-4ca1-879e-68f62978b21a/formatters/xsl-view?output=pdf&language=ger&approved=true
