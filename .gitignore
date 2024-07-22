@@ -50,3 +50,4 @@ data/fmi-graph/dijkstra-query-checks/*
 # Keep data from de lidar 1m dataset as sample
 !/data/raster-file/**/
 !/data/raster-file/de/**
+!/data/benchmark/mesh-simplification/dgm1_32_529_5376_1_bw_2017-raw-raster.obj

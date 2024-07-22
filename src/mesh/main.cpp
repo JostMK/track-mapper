@@ -39,18 +39,23 @@ int main() {
     std::cout << "Vertices: " << mesh.number_of_vertices() << " Edges: " << mesh.number_of_edges() << " Faces: " << mesh
             .number_of_faces() << std::endl;
 
+    std::cout << "Simplify mesh? (y): " << std::endl;
+    std::string shouldSimplify;
+    std::cin >> shouldSimplify;
 
-    std::cout << "Simplifying mesh.." << std::endl;
-    start_time = std::chrono::steady_clock::now();
+    if(shouldSimplify.starts_with('y')) {
+        std::cout << "Simplifying mesh.." << std::endl;
+        start_time = std::chrono::steady_clock::now();
 
-    const int edgesRemoved = TrackMapper::Mesh::reduceMesh(mesh, 0.1);
+        const int edgesRemoved = TrackMapper::Mesh::reduceMesh(mesh, 0.1);
 
-    end_time = std::chrono::steady_clock::now();
-    std::cout << "..in " << std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count() << "ms"
-            << std::endl;
-    std::cout << "Vertices: " << mesh.number_of_vertices() << " Edges: " << mesh.number_of_edges() << " Faces: " << mesh
-            .number_of_faces() << std::endl;
-    std::cout << "Edges removed: " << edgesRemoved << std::endl;
+        end_time = std::chrono::steady_clock::now();
+        std::cout << "..in " << std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count() << "ms"
+                << std::endl;
+        std::cout << "Vertices: " << mesh.number_of_vertices() << " Edges: " << mesh.number_of_edges() << " Faces: " << mesh
+                .number_of_faces() << std::endl;
+        std::cout << "Edges removed: " << edgesRemoved << std::endl;
+    }
 
     std::cout << "\nSpecify file output path: (.off .obj .stl .ply .ts .vtp)" << std::endl;
     std::string outFilePath;
