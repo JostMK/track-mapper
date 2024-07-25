@@ -3,10 +3,11 @@ project(TrackMapper)
 
 set(CMAKE_CXX_STANDARD 23)
 
-find_package(CGAL REQUIRED) # https://github.com/CGAL/cgal
-find_package(GDAL REQUIRED) # https://github.com/OSGeo/gdal
+find_package(CGAL 5.6 REQUIRED) # https://github.com/CGAL/cgal
+find_package(GDAL 3.9 REQUIRED) # https://github.com/OSGeo/gdal
 
-find_package(PROJ REQUIRED CONFIG) # https://github.com/OSGeo/PROJ used by gdal
+find_package(Eigen3 3.4 REQUIRED CONFIG) # https://gitlab.com/libeigen/eigen
+find_package(PROJ 9.4 REQUIRED CONFIG) # https://github.com/OSGeo/PROJ used by gdal
 
 add_library(TrackMapperMeshLib STATIC
         raster_reader.h
@@ -14,7 +15,7 @@ add_library(TrackMapperMeshLib STATIC
         mesh_operations.h
         mesh_operations.cpp
 )
-target_link_libraries(TrackMapperMeshLib CGAL::CGAL GDAL::GDAL)
+target_link_libraries(TrackMapperMeshLib CGAL::CGAL GDAL::GDAL Eigen3::Eigen)
 # copies proj lib data files post build - sometimes error if not there
 add_custom_command(TARGET TrackMapperMeshLib POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_directory

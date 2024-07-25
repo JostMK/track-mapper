@@ -15,36 +15,68 @@ namespace TrackMapper::Mesh {
 
     namespace SMS = CGAL::Surface_mesh_simplification;
 
-    Point_3 getPointForPixel(const GeoTransform &transform, double x, double y, double z);
-
-    Mesh meshFromRasterData(const RasterData &raster_data) {
+    Mesh meshFromRasterData(const Raster::PointGrid &point_grid) {
         Mesh mesh;
         std::vector<Mesh::Vertex_index> vertex_indices;
-        vertex_indices.reserve(raster_data.points.size());
+        vertex_indices.reserve(point_grid.points.size());
 
-        const int quads = (raster_data.sizeX - 1) * (raster_data.sizeY - 1);
-        mesh.reserve(raster_data.points.size(),
+        const auto quads = (point_grid.sizeX - 1) * (point_grid.sizeY - 1);
+        mesh.reserve(point_grid.points.size(),
                      // one triangle per quad + all the right most vertical edges + all the lowest horizontal edges
-                     quads * 3 + (raster_data.sizeX - 1) + (raster_data.sizeY - 1), quads * 2);
+                     quads * 3 + (point_grid.sizeX - 1) + (point_grid.sizeY - 1), quads * 2);
 
-        for (int z = 0; z < raster_data.sizeY; ++z) {
-            for (int x = 0; x < raster_data.sizeX; ++x) {
-                const int index = z * raster_data.sizeX + x;
-                const auto vertexIndex =
-                        mesh.add_vertex(getPointForPixel(raster_data.transform, x, raster_data.points[index], z));
-                vertex_indices.push_back(vertexIndex);
-            }
+        for (auto [x, y, z] : point_grid.points) {
+            const auto vertexIndex = mesh.add_vertex({x, y, z});
+            vertex_indices.push_back(vertexIndex);
         }
 
-        for (int y = 0; y < raster_data.sizeY - 1; ++y) {
-            for (int x = 0; x < raster_data.sizeX - 1; ++x) {
-                const int indexTL = y * raster_data.sizeX + x;
-                const int indexTR = y * raster_data.sizeX + (x + 1);
-                const int indexBL = (y + 1) * raster_data.sizeX + x;
-                const int indexBR = (y + 1) * raster_data.sizeX + (x + 1);
+        for (int y = 0; y < point_grid.sizeY - 1; ++y) {
+            for (int x = 0; x < point_grid.sizeX - 1; ++x) {
+                const int indexTL = y * point_grid.sizeX + x;
+                const int indexTR = y * point_grid.sizeX + (x + 1);
+                const int indexBL = (y + 1) * point_grid.sizeX + x;
+                const int indexBR = (y + 1) * point_grid.sizeX + (x + 1);
+                // TODO: fix normals by inverting winding order, inverted because image extends downwards invers to 3d y-axis
                 mesh.add_face(vertex_indices[indexTL], vertex_indices[indexBL], vertex_indices[indexTR]);
                 mesh.add_face(vertex_indices[indexTR], vertex_indices[indexBL], vertex_indices[indexBR]);
             }
+        }
+
+        return mesh;
+    }
+
+    Mesh meshFromPath(const Path &path, const double width) {
+        Mesh mesh;
+        std::vector<Mesh::Vertex_index> vertex_indices;
+        vertex_indices.reserve(path.points.size() * 2);
+
+        const auto quads = path.points.size() - 1;
+        mesh.reserve(vertex_indices.size(), 4 * quads + 1, 2 * quads);
+
+        for (auto i = 0; i < quads; ++i) {
+            const auto [x1, y1] = path.points[i];
+            const auto [x2, y2] = path.points[i + 1];
+
+            // normalized direction from point 1 to point 2 rotated 90 degree
+            const Eigen::Vector2d dir = Eigen::Vector2d(y1 - y2, x2 - x1).normalized();
+            const Eigen::Vector2d mid((x2 - x1) / 2, (y2 - y1) / 2);
+            const Eigen::Vector2d left = mid - dir * width / 2;
+            const Eigen::Vector2d right = mid + dir * width / 2;
+
+            const auto vertexIndexL = mesh.add_vertex({left.x(), 0, left.y()});
+            vertex_indices.push_back(vertexIndexL);
+
+            const auto vertexIndexR = mesh.add_vertex({right.x(), 0, right.y()});
+            vertex_indices.push_back(vertexIndexR);
+        }
+
+        for (auto i = 0; i < quads - 1; ++i) {
+            const int indexL1 = 4 * i + 0;
+            const int indexR1 = 4 * i + 1;
+            const int indexL2 = 4 * i + 2;
+            const int indexR2 = 4 * i + 3;
+            mesh.add_face(vertex_indices[indexL1], vertex_indices[indexR1], vertex_indices[indexL2]);
+            mesh.add_face(vertex_indices[indexL2], vertex_indices[indexR1], vertex_indices[indexR2]);
         }
 
         return mesh;
@@ -71,14 +103,5 @@ namespace TrackMapper::Mesh {
 
     void writeMeshToFile(const Mesh &mesh, const std::string &filepath) {
         CGAL::IO::write_polygon_mesh(filepath, mesh, CGAL::parameters::stream_precision(17));
-    }
-
-
-    Point_3 getPointForPixel(const GeoTransform &transform, const double x, const double y, const double z) {
-        // see: https://gdal.org/gdal.pdf#page=1002
-        // FIX: temporary replace origin with 0 so values don't get to big
-        // FEATURE: maybe add slight randomness to avoid grid pattern
-        // origin is in the top left corner so z-axis direction is inverted
-        return {0 + transform[1] * x - z * transform[2], y, 0 + transform[4] * x - z * transform[5]};
     }
 } // namespace TrackMapper::Mesh

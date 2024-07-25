@@ -8,17 +8,18 @@
 #include <string>
 #include <vector>
 
-namespace TrackMapper::Mesh {
-    using GeoTransform = std::array<double, 6>;
+namespace TrackMapper::Raster {
 
-    struct RasterData {
-        const std::vector<float> points;
-        const int sizeX;
-        const int sizeY;
-        const GeoTransform transform;
+    struct Point {
+        double x,y,z;
     };
 
-    RasterData readRasterData(const std::string &filepath);
+    struct PointGrid {
+        std::vector<Point> points;
+        int sizeX, sizeY;
+    };
+
+    PointGrid readRasterData(const std::string &filepath);
 }
 
 #endif //RASTER_READER_H

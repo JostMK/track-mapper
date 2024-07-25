@@ -16,7 +16,18 @@ namespace TrackMapper::Mesh {
     using Point_3 = Kernel::Point_3;
     using Mesh = CGAL::Surface_mesh<Point_3>;
 
-    Mesh meshFromRasterData(const RasterData &raster_data);
+    struct Point {
+        double x;
+        double y;
+    };
+
+    struct Path {
+        std::vector<Point> points;
+    };
+
+    Mesh meshFromRasterData(const Raster::PointGrid &point_grid);
+
+    Mesh meshFromPath(const Path &path, double width);
 
     int reduceMesh(Mesh &mesh, double reduction_ratio);
 

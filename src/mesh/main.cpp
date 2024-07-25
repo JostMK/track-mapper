@@ -21,7 +21,7 @@ int main() {
     std::cout << "Reading data from file.." << std::endl;
     start_time = std::chrono::steady_clock::now();
 
-    const auto data = TrackMapper::Mesh::readRasterData(inFilePath);
+    const auto data = TrackMapper::Raster::readRasterData(inFilePath);
     end_time = std::chrono::steady_clock::now();
     std::cout << "..in " << std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count() << "ms"
             << std::endl;
