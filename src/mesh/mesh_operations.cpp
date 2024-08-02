@@ -46,14 +46,15 @@ namespace TrackMapper::Mesh {
     }
 
     Mesh meshFromPath(const Path &path, const double width) {
+    /*
         Mesh mesh;
         std::vector<Mesh::Vertex_index> vertex_indices;
-        vertex_indices.reserve(path.points.size() * 2);
+        vertex_indices.reserve((path.points.size()-1) * 2);
 
-        const auto quads = path.points.size() - 1;
+        const auto quads = path.points.size() - 2;
         mesh.reserve(vertex_indices.size(), 4 * quads + 1, 2 * quads);
 
-        for (auto i = 0; i < quads; ++i) {
+        for (auto i = 0; i < path.points.size()-1; ++i) {
             const auto [x1, y1] = path.points[i];
             const auto [x2, y2] = path.points[i + 1];
 
@@ -70,13 +71,28 @@ namespace TrackMapper::Mesh {
             vertex_indices.push_back(vertexIndexR);
         }
 
-        for (auto i = 0; i < quads - 1; ++i) {
-            const int indexL1 = 4 * i + 0;
-            const int indexR1 = 4 * i + 1;
-            const int indexL2 = 4 * i + 2;
-            const int indexR2 = 4 * i + 3;
+        for (auto i = 0; i < quads; ++i) {
+            const int indexL1 = 2 * i + 0;
+            const int indexR1 = 2 * i + 1;
+            const int indexL2 = 2 * i + 2;
+            const int indexR2 = 2 * i + 3;
             mesh.add_face(vertex_indices[indexL1], vertex_indices[indexR1], vertex_indices[indexL2]);
             mesh.add_face(vertex_indices[indexL2], vertex_indices[indexR1], vertex_indices[indexR2]);
+        }
+
+        return mesh;
+
+        */
+
+        Mesh mesh;
+
+        for (auto i = 0; i < path.points.size()-1; ++i) {
+            const auto [x1, y1] = path.points[i];
+            const auto [x2, y2] = path.points[i + 1];
+
+            const auto vertexIndex1 = mesh.add_vertex({x1, 0, y1});
+            const auto vertexIndex2 = mesh.add_vertex({x2, 0, y2});
+            mesh.add_edge(vertexIndex1, vertexIndex2);
         }
 
         return mesh;

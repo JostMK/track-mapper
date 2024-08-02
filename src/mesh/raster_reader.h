@@ -4,22 +4,26 @@
 
 #ifndef RASTER_READER_H
 #define RASTER_READER_H
-#include <array>
+
 #include <string>
 #include <vector>
 
 namespace TrackMapper::Raster {
 
     struct Point {
-        double x,y,z;
+        double x, y, z;
     };
 
     struct PointGrid {
         std::vector<Point> points;
         int sizeX, sizeY;
+        Point origin;
+        std::string wkt; // projection information
     };
 
-    PointGrid readRasterData(const std::string &filepath);
-}
+    PointGrid readRasterData(const std::string &rasterFilePath);
 
-#endif //RASTER_READER_H
+    bool reprojectPointsIntoRaster(const std::string &rasterFilePath, std::vector<Point> &points);
+} // namespace TrackMapper::Raster
+
+#endif // RASTER_READER_H

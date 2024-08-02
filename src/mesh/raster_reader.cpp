@@ -8,22 +8,26 @@
 
 #include "raster_reader.h"
 
+#include <array>
 #include <iostream>
 
 namespace TrackMapper::Raster {
 
     using GeoTransform = std::array<double, 6>;
 
+    OGRSpatialReference osmPointsSpatRef(
+            R"(GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","4326"]])");
+
     Point getPointForPixel(const GeoTransform &transform, double x, double y, double z);
 
-    PointGrid readRasterData(const std::string &filepath) {
+    PointGrid readRasterData(const std::string &rasterFilePath) {
         CPLSetConfigOption("PROJ_LIB", "./proj");
-
         GDALAllRegister();
 
         // TODO: check for valid file
         // TODO: handle opening fails
-        const auto pDataset = GDALDatasetUniquePtr(GDALDataset::FromHandle(GDALOpen(filepath.c_str(), GA_ReadOnly)));
+        const auto pDataset =
+                GDALDatasetUniquePtr(GDALDataset::FromHandle(GDALOpen(rasterFilePath.c_str(), GA_ReadOnly)));
 
         GeoTransform transform{};
         pDataset->GetGeoTransform(transform.data());
@@ -48,29 +52,18 @@ namespace TrackMapper::Raster {
         grid.sizeX = nXSize;
         grid.sizeY = nYSize;
 
-        // reproject points into mercator projection
-        const OGRSpatialReference wktRef(pDataset->GetProjectionRef());
-        const auto pTransform = GDALCreateReprojectionTransformer(wktRef.exportToWkt().c_str(), "merc");
+        grid.origin = {transform[0], 0, transform[3]};
 
-        if(pTransform == nullptr) {
-            std::cout << "Error creating transformer" << std::endl;
-        }
+        const OGRSpatialReference dbSpatialRef(pDataset->GetProjectionRef());
+        grid.wkt = dbSpatialRef.exportToWkt();
 
         for (int z = 0; z < nYSize; ++z) {
             for (int x = 0; x < nXSize; ++x) {
                 const int index = z * nXSize + x;
                 auto point = getPointForPixel(transform, x, values[index], z);
-                int _s = 0;
-                bool success = GDALReprojectionTransform(pTransform, 0, 1, &point.x, &point.y, &point.z, &_s);
-
-                if(!success)
-                    std::cout << "Error reprojecting" << std::endl;
-
                 grid.points.push_back(point);
             }
         }
-
-        GDALDestroyReprojectionTransformer(pTransform);
 
         return grid;
     }
@@ -80,9 +73,45 @@ namespace TrackMapper::Raster {
         // FEATURE: maybe add slight randomness to avoid grid pattern
         // origin is in the top left corner so z-axis direction is inverted
         return {
-                transform[0] + transform[1] * x - z * transform[2], //
+                transform[1] * x + z * transform[2], //
                 y, //
-                transform[3] + transform[4] * x - z * transform[5] //
+                transform[4] * x + z * transform[5] //
         };
     }
-} // namespace TrackMapper::Mesh::Raster
+
+
+    bool reprojectPointsIntoRaster(const std::string &rasterFilePath, std::vector<Point> &points) {
+        CPLSetConfigOption("PROJ_LIB", "./proj");
+        GDALAllRegister();
+
+        // TODO: check for valid file
+        // TODO: handle opening fails
+        const auto pDataset =
+                GDALDatasetUniquePtr(GDALDataset::FromHandle(GDALOpen(rasterFilePath.c_str(), GA_ReadOnly)));
+
+        GeoTransform transform{};
+        pDataset->GetGeoTransform(transform.data());
+
+        OGRSpatialReference dstSpatialRef(pDataset->GetProjectionRef());
+        if (dstSpatialRef.Validate() != OGRERR_NONE)
+            return false;
+
+        const auto pTransform =
+                GDALCreateReprojectionTransformerEx(OGRSpatialReference::ToHandle(&osmPointsSpatRef),
+                                                    OGRSpatialReference::ToHandle(&dstSpatialRef), nullptr);
+        if (pTransform == nullptr)
+            return false;
+
+        for (auto &point: points) {
+            bool success = GDALReprojectionTransform(pTransform, 0, 1, &point.x, &point.y, nullptr, nullptr);
+
+            // align raster and path origin
+            point.x -= transform[0];
+            point.y -= transform[3];
+            if (!success)
+                return false;
+        }
+
+        return true;
+    }
+} // namespace TrackMapper::Raster
