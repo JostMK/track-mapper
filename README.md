@@ -51,8 +51,8 @@ maps based on real-world data.
     - [ ] Stores all uploaded data (paths, geo files)
 - [ ] Mesh stage
   - [ ] Terrain mesh generation[^terrain_mesh]
-    - [ ] Read in raster data
-    - [ ] Create terrain meshes
+    - [x] Read in raster data
+    - [x] Create terrain meshes
     - [ ] Create heat maps for detail reduction based on road proximity[^research_needed]
     - [ ] Simplify terrain meshes based on heat maps
     - [ ] Merge terrain meshes
