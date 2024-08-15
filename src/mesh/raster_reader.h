@@ -8,7 +8,13 @@
 #include <string>
 #include <vector>
 
+#include "gdal_wrapper.h"
+
 namespace TrackMapper::Raster {
+
+    struct OSMPoint {
+        double lat, lng;
+    };
 
     struct Point {
         double x, y, z;
@@ -21,9 +27,11 @@ namespace TrackMapper::Raster {
         std::string wkt; // projection information
     };
 
-    PointGrid readRasterData(const std::string &rasterFilePath);
+    PointGrid readRasterData(GDALDatasetWrapper &dataset);
 
-    bool reprojectPointsIntoRaster(const std::string &rasterFilePath, std::vector<Point> &points);
+    bool reprojectOSMPointsIntoRaster(std::vector<OSMPoint> &points, const GDALProjectionReferenceWrapper &dstProjRef,
+                                      const Point &rasterOrigin);
+
 } // namespace TrackMapper::Raster
 
 #endif // RASTER_READER_H

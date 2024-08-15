@@ -14,6 +14,8 @@ add_library(TrackMapperMeshLib STATIC
         raster_reader.cpp
         mesh_operations.h
         mesh_operations.cpp
+        gdal_wrapper.cpp
+        gdal_wrapper.h
 )
 
 target_link_libraries(TrackMapperMeshLib CGAL::CGAL GDAL::GDAL Eigen3::Eigen)

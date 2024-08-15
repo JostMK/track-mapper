@@ -14,7 +14,8 @@ void createMesh();
 int main() {
     bool quit = false;
     while (!quit) {
-        std::cout << "Select option: create mesh from raster (m), create path in raster space (p), quit (q):" << std::endl;
+        std::cout << "Select option: create mesh from raster (m), create path in raster space (p), quit (q):"
+                  << std::endl;
         std::string selection;
         std::cin >> selection;
 
@@ -46,9 +47,9 @@ void createPath() {
     std::cout << "Enter Path to geo raster file (for projection reference):" << std::endl;
     std::string inRasterPath;
     std::cin >> inRasterPath;
+    TrackMapper::Raster::GDALDatasetWrapper dataset(inRasterPath);
 
-    std::vector<TrackMapper::Raster::Point> points;
-
+    std::vector<TrackMapper::Raster::OSMPoint> points;
     if (std::ifstream pathFile(inFilePath); pathFile.is_open()) {
         std::string line;
         while (pathFile.good()) {
@@ -56,16 +57,37 @@ void createPath() {
             const size_t seperator = line.find_first_of(';');
             const double lat = std::stod(line.substr(0, seperator));
             const double lng = std::stod(line.substr(seperator + 1));
-            points.emplace_back(lat, lng, 0);
+            points.emplace_back(lat, lng);
         }
         pathFile.close();
     }
 
-    TrackMapper::Raster::reprojectPointsIntoRaster(inRasterPath, points);
+    TrackMapper::Raster::GDALProjectionReferenceWrapper dstProjRef(dataset.GetProjectionRef().GetWkt());
+    /*
+    while (!dstProjRef.IsValid()) {
+        std::cout << "No valid projection reference in provided raster file!" << std::endl;
+        std::cout << "Specify projection reference manually (or press 'q' to quit):" << std::endl;
+        std::string inProjRef;
+        std::getline(std::cin >> std::ws, inProjRef);
+
+        if(inProjRef[0] == 'q')
+            return;
+
+        dstProjRef = TrackMapper::Raster::GDALProjectionReferenceWrapper(inProjRef);
+    }*/
+
+    const TrackMapper::Raster::GeoTransform &transform = dataset.GetGeoTransform();
+
+    TrackMapper::Raster::reprojectOSMPointsIntoRaster(points, dstProjRef, {transform[0], 0, transform[3]});
+
+    for (auto point: points) {
+        std::cout << "Point: (" << point.lat << " : " << point.lng << ")" << std::endl;
+    }
+    return;
 
     TrackMapper::Mesh::Path path;
     path.points.reserve(points.size());
-    for (auto [x, y, z]: points) {
+    for (auto [x, y]: points) {
         path.points.emplace_back(x, y);
     }
 
@@ -91,7 +113,8 @@ void createMesh() {
     std::cout << "Reading data from file.." << std::endl;
     start_time = std::chrono::steady_clock::now();
 
-    const auto data = TrackMapper::Raster::readRasterData(inFilePath);
+    TrackMapper::Raster::GDALDatasetWrapper dataset(inFilePath);
+    const auto data = TrackMapper::Raster::readRasterData(dataset);
     end_time = std::chrono::steady_clock::now();
     std::cout << "..in " << std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count() << "ms"
               << std::endl;
