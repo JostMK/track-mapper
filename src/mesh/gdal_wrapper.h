@@ -10,52 +10,41 @@
 #include <string>
 #include <vector>
 
+#include <ogr_spatialref.h>
+
 namespace TrackMapper::Raster {
 
     using GeoTransform = std::array<double, 6>;
 
-    /// A wrapper around the OGRSpatialReference class
-    class GDALProjectionReferenceWrapper {
-    public:
-        /**
-         * @param wktString A string in the OGC WKT format specifying a projection
-         */
-        explicit GDALProjectionReferenceWrapper(const std::string &wktString);
-        ~GDALProjectionReferenceWrapper(); // needed for pImpl to compile!
-
-        GDALProjectionReferenceWrapper(const GDALProjectionReferenceWrapper &other); // copy constructor
-        GDALProjectionReferenceWrapper(GDALProjectionReferenceWrapper &&other) noexcept; // move constructor
-        GDALProjectionReferenceWrapper &operator=(const GDALProjectionReferenceWrapper &other); // copy assignment
-        GDALProjectionReferenceWrapper &operator=(GDALProjectionReferenceWrapper &&other) noexcept; // move assignment
-
-        [[nodiscard]] std::string GetWkt() const;
-
-        [[nodiscard]] bool IsValid() const;
-
-    private:
-        // opaque pointer to avoid including gdal headers
-        struct impl;
-        std::unique_ptr<impl> pImpl;
-    };
+    // TODO: re-add wrapper around OGRSpatialReference (problem: inconsistent behaviour when using for reprojection)
 
     /// A wrapper around the GDALDatasetUniquePtr class
     class GDALDatasetWrapper {
     public:
+        /**
+         * @param filepath Path to a geo raster dataset file readable by GDAL (e.g. .tif (geo tiff), .xyz, ..)
+         */
         explicit GDALDatasetWrapper(const std::string &filepath);
         ~GDALDatasetWrapper();
 
+        /**
+         * @return GeoTransform containing tranformation information of the dataset
+         * @see [Introduction to Geotransforms](https://gdal.org/tutorials/geotransforms_tut.html#geotransform-tutorial)
+         */
         [[nodiscard]] const GeoTransform &GetGeoTransform() const;
 
         [[nodiscard]] int GetSizeX() const;
         [[nodiscard]] int GetSizeY() const;
 
-        /// Returns a vector containing the data of the first raster band.
-        /// Note: The data is in row major (x-axis) order
-        /// Note: At the moment only reading data from the first raster band is supported
-        /// Note: At the moment only data of type float (GDT_Float32) is supported
+        /**
+         * @return vector containing the hight data for each pixel in row major order
+         * @note The data is in row major (x-axis) order
+         * @note At the moment only reading data from the first raster band is supported
+         * @note At the moment only data of type float (GDT_Float32) is supported
+         */
         const std::vector<float> &GetData();
 
-        [[nodiscard]] const GDALProjectionReferenceWrapper &GetProjectionRef() const;
+        [[nodiscard]] const OGRSpatialReference &GetProjectionRef() const;
 
     private:
         // opaque pointer to avoid including gdal headers
@@ -63,15 +52,14 @@ namespace TrackMapper::Raster {
         std::unique_ptr<impl> pImpl;
 
         GeoTransform mTransform;
-        GDALProjectionReferenceWrapper mProjRef;
+        OGRSpatialReference mProjRef;
         std::vector<float> mData;
     };
 
     /// A wrapper around GDALCreateReprojectionTransformerEx class and GDALReprojectionTransform function
     class GDALReprojectionTransformer {
     public:
-        GDALReprojectionTransformer(const GDALProjectionReferenceWrapper &srcProjRef,
-                                    const GDALProjectionReferenceWrapper &dstProjRef);
+        GDALReprojectionTransformer(OGRSpatialReference &srcProjRef, OGRSpatialReference &dstProjRef);
         ~GDALReprojectionTransformer();
 
         [[nodiscard]] bool Transform(double *x, double *y, double *z) const;

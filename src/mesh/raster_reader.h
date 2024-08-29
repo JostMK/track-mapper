@@ -29,7 +29,7 @@ namespace TrackMapper::Raster {
 
     PointGrid readRasterData(GDALDatasetWrapper &dataset);
 
-    bool reprojectOSMPointsIntoRaster(std::vector<OSMPoint> &points, const GDALProjectionReferenceWrapper &dstProjRef,
+    bool reprojectOSMPointsIntoRaster(std::vector<OSMPoint> &points, OGRSpatialReference &dstProjRef,
                                       const Point &rasterOrigin);
 
 } // namespace TrackMapper::Raster

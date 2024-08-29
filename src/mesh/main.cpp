@@ -62,9 +62,9 @@ void createPath() {
         pathFile.close();
     }
 
-    TrackMapper::Raster::GDALProjectionReferenceWrapper dstProjRef(dataset.GetProjectionRef().GetWkt());
-    /*
-    while (!dstProjRef.IsValid()) {
+    OGRSpatialReference dstProjRef(dataset.GetProjectionRef());
+
+    while (dstProjRef.Validate() != OGRERR_NONE) {
         std::cout << "No valid projection reference in provided raster file!" << std::endl;
         std::cout << "Specify projection reference manually (or press 'q' to quit):" << std::endl;
         std::string inProjRef;
@@ -73,17 +73,12 @@ void createPath() {
         if(inProjRef[0] == 'q')
             return;
 
-        dstProjRef = TrackMapper::Raster::GDALProjectionReferenceWrapper(inProjRef);
-    }*/
+        dstProjRef = OGRSpatialReference(inProjRef.c_str());
+    }
 
     const TrackMapper::Raster::GeoTransform &transform = dataset.GetGeoTransform();
 
     TrackMapper::Raster::reprojectOSMPointsIntoRaster(points, dstProjRef, {transform[0], 0, transform[3]});
-
-    for (auto point: points) {
-        std::cout << "Point: (" << point.lat << " : " << point.lng << ")" << std::endl;
-    }
-    return;
 
     TrackMapper::Mesh::Path path;
     path.points.reserve(points.size());

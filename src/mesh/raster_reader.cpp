@@ -10,7 +10,7 @@
 
 namespace TrackMapper::Raster {
 
-    const GDALProjectionReferenceWrapper osmPointsProjRef(
+    OGRSpatialReference osmPointsProjRef(
             R"(GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","4326"]])");
 
     PointGrid readRasterData(GDALDatasetWrapper &dataset) {
@@ -21,7 +21,7 @@ namespace TrackMapper::Raster {
         grid.sizeY = dataset.GetSizeY();
 
         grid.origin = {transform[0], 0, transform[3]};
-        grid.wkt = dataset.GetProjectionRef().GetWkt();
+        grid.wkt = dataset.GetProjectionRef().exportToWkt();
 
         const std::vector<float> &values = dataset.GetData();
         grid.points.reserve(values.size());
@@ -38,10 +38,10 @@ namespace TrackMapper::Raster {
         return grid;
     }
 
-    bool reprojectOSMPointsIntoRaster(std::vector<OSMPoint> &points, const GDALProjectionReferenceWrapper &dstProjRef,
+    bool reprojectOSMPointsIntoRaster(std::vector<OSMPoint> &points, OGRSpatialReference &dstProjRef,
                                       const Point &rasterOrigin) {
-        //if (!dstProjRef.IsValid())
-        //    return false;
+        if (dstProjRef.Validate() != OGRERR_NONE)
+             return false;
 
         const GDALReprojectionTransformer transformer(osmPointsProjRef, dstProjRef);
 
