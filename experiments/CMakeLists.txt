@@ -5,3 +5,5 @@ set(CMAKE_CXX_STANDARD 23)
 
 add_subdirectory(mesh-simplification)
 add_subdirectory(point-projection)
+add_subdirectory(road-creation)
+add_subdirectory(spline-sampling)
