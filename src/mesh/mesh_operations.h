@@ -13,16 +13,11 @@
 
 namespace TrackMapper::Mesh {
     using Kernel = CGAL::Simple_cartesian<double>;
-    using Point_3 = Kernel::Point_3;
-    using Mesh = CGAL::Surface_mesh<Point_3>;
-
-    struct Point {
-        double x;
-        double y;
-    };
+    using Point3 = Kernel::Point_3;
+    using Mesh = CGAL::Surface_mesh<Point3>;
 
     struct Path {
-        std::vector<Point> points;
+        std::vector<Point3> points;
     };
 
     Mesh meshFromRasterData(const Raster::PointGrid &point_grid);

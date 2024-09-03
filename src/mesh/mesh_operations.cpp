@@ -13,6 +13,8 @@
 
 namespace TrackMapper::Mesh {
 
+    using Vector3 = Kernel::Vector_3;
+
     namespace SMS = CGAL::Surface_mesh_simplification;
 
     Mesh meshFromRasterData(const Raster::PointGrid &point_grid) {
@@ -25,7 +27,7 @@ namespace TrackMapper::Mesh {
                      // one triangle per quad + all the right most vertical edges + all the lowest horizontal edges
                      quads * 3 + (point_grid.sizeX - 1) + (point_grid.sizeY - 1), quads * 2);
 
-        for (auto [x, y, z] : point_grid.points) {
+        for (auto [x, y, z]: point_grid.points) {
             const auto vertexIndex = mesh.add_vertex({x, y, z});
             vertex_indices.push_back(vertexIndex);
         }
@@ -36,7 +38,8 @@ namespace TrackMapper::Mesh {
                 const int indexTR = y * point_grid.sizeX + (x + 1);
                 const int indexBL = (y + 1) * point_grid.sizeX + x;
                 const int indexBR = (y + 1) * point_grid.sizeX + (x + 1);
-                // TODO: fix normals by inverting winding order, inverted because image extends downwards invers to 3d y-axis
+                // TODO: fix normals by inverting winding order, inverted because image extends downwards invers to 3d
+                // y-axis
                 mesh.add_face(vertex_indices[indexTL], vertex_indices[indexBL], vertex_indices[indexTR]);
                 mesh.add_face(vertex_indices[indexTR], vertex_indices[indexBL], vertex_indices[indexBR]);
             }
@@ -46,29 +49,34 @@ namespace TrackMapper::Mesh {
     }
 
     Mesh meshFromPath(const Path &path, const double width) {
-    /*
         Mesh mesh;
         std::vector<Mesh::Vertex_index> vertex_indices;
-        vertex_indices.reserve((path.points.size()-1) * 2);
+        vertex_indices.reserve((path.points.size() - 2) * 2);
 
-        const auto quads = path.points.size() - 2;
+        const auto quads = path.points.size() - 3;
         mesh.reserve(vertex_indices.size(), 4 * quads + 1, 2 * quads);
 
-        for (auto i = 0; i < path.points.size()-1; ++i) {
-            const auto [x1, y1] = path.points[i];
-            const auto [x2, y2] = path.points[i + 1];
+        for (int i = 1; i < path.points.size() - 1; ++i) {
+            // TODO: fix division by zero when consecutive points share same position
+            Vector3 v1 = path.points[i - 1] - path.points[i];
+            Vector3 v2 = path.points[i + 1] - path.points[i];
+            Vector3 n1 = v1 / std::sqrt(v1.squared_length());
+            Vector3 n2 = v2 / std::sqrt(v2.squared_length());
+            Vector3 h = n1 + n2;
+            Vector3 nh = h / std::sqrt(h.squared_length());
 
-            // normalized direction from point 1 to point 2 rotated 90 degree
-            const Eigen::Vector2d dir = Eigen::Vector2d(y1 - y2, x2 - x1).normalized();
-            const Eigen::Vector2d mid((x2 - x1) / 2, (y2 - y1) / 2);
-            const Eigen::Vector2d left = mid - dir * width / 2;
-            const Eigen::Vector2d right = mid + dir * width / 2;
+            const auto vertexIndexL = mesh.add_vertex(path.points[i] + nh * width);
+            const auto vertexIndexR = mesh.add_vertex(path.points[i] - nh * width);
 
-            const auto vertexIndexL = mesh.add_vertex({left.x(), 0, left.y()});
-            vertex_indices.push_back(vertexIndexL);
+            // tests if v2 points to the left of v1 relative to the horizontal plane
+            if(CGAL::scalar_product(CGAL::cross_product(v2, v1), Vector3(0,1,0)) > 0) {
+                vertex_indices.push_back(vertexIndexL);
+                vertex_indices.push_back(vertexIndexR);
+            }else { // flip order of adding vertices to assure the vertex to the left always gets pushed first
+                vertex_indices.push_back(vertexIndexR);
+                vertex_indices.push_back(vertexIndexL);
+            }
 
-            const auto vertexIndexR = mesh.add_vertex({right.x(), 0, right.y()});
-            vertex_indices.push_back(vertexIndexR);
         }
 
         for (auto i = 0; i < quads; ++i) {
@@ -78,21 +86,6 @@ namespace TrackMapper::Mesh {
             const int indexR2 = 2 * i + 3;
             mesh.add_face(vertex_indices[indexL1], vertex_indices[indexR1], vertex_indices[indexL2]);
             mesh.add_face(vertex_indices[indexL2], vertex_indices[indexR1], vertex_indices[indexR2]);
-        }
-
-        return mesh;
-
-        */
-
-        Mesh mesh;
-
-        for (auto i = 0; i < path.points.size()-1; ++i) {
-            const auto [x1, y1] = path.points[i];
-            const auto [x2, y2] = path.points[i + 1];
-
-            const auto vertexIndex1 = mesh.add_vertex({x1, 0, y1});
-            const auto vertexIndex2 = mesh.add_vertex({x2, 0, y2});
-            mesh.add_edge(vertexIndex1, vertexIndex2);
         }
 
         return mesh;

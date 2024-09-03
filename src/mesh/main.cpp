@@ -83,10 +83,10 @@ void createPath() {
     TrackMapper::Mesh::Path path;
     path.points.reserve(points.size());
     for (auto [x, y]: points) {
-        path.points.emplace_back(x, y);
+        path.points.emplace_back(x, 0, y); //TODO: add hight from raster
     }
 
-    const auto mesh = TrackMapper::Mesh::meshFromPath(path, 6);
+    const auto mesh = TrackMapper::Mesh::meshFromPath(path, 3);
 
     std::cout << "\nSpecify file output path: (.off .obj .stl .ply .ts .vtp)" << std::endl;
     std::string outFilePath;
