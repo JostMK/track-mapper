@@ -48,6 +48,7 @@ void createPath() {
     std::string inRasterPath;
     std::cin >> inRasterPath;
     TrackMapper::Raster::GDALDatasetWrapper dataset(inRasterPath);
+    const auto grid = TrackMapper::Raster::readRasterData(dataset);
 
     std::vector<TrackMapper::Raster::OSMPoint> points;
     if (std::ifstream pathFile(inFilePath); pathFile.is_open()) {
@@ -62,7 +63,7 @@ void createPath() {
         pathFile.close();
     }
 
-    OGRSpatialReference dstProjRef(dataset.GetProjectionRef());
+    OGRSpatialReference dstProjRef(grid.wkt.c_str());
 
     while (dstProjRef.Validate() != OGRERR_NONE) {
         std::cout << "No valid projection reference in provided raster file!" << std::endl;
@@ -70,20 +71,21 @@ void createPath() {
         std::string inProjRef;
         std::getline(std::cin >> std::ws, inProjRef);
 
-        if(inProjRef[0] == 'q')
+        if (inProjRef[0] == 'q')
             return;
 
         dstProjRef = OGRSpatialReference(inProjRef.c_str());
     }
 
-    const TrackMapper::Raster::GeoTransform &transform = dataset.GetGeoTransform();
+    TrackMapper::Raster::reprojectOSMPointsIntoRaster(points, dstProjRef, grid.origin);
 
-    TrackMapper::Raster::reprojectOSMPointsIntoRaster(points, dstProjRef, {transform[0], 0, transform[3]});
 
     TrackMapper::Mesh::Path path;
     path.points.reserve(points.size());
     for (auto [x, y]: points) {
-        path.points.emplace_back(x, 0, y); //TODO: add hight from raster
+        TrackMapper::Raster::Point p{x, 0, y};
+        TrackMapper::Raster::interpolateHeightInGrid(grid, p);
+        path.points.emplace_back(p.x, p.y, p.z);
     }
 
     const auto mesh = TrackMapper::Mesh::meshFromPath(path, 3);

@@ -28,9 +28,8 @@ namespace TrackMapper::Raster {
 
         for (int z = 0; z < dataset.GetSizeY(); ++z) {
             for (int x = 0; x < dataset.GetSizeX(); ++x) {
-                const int index = z * dataset.GetSizeX() + x;
                 // see: https://gdal.org/tutorials/raster_api_tut.html#getting-dataset-information [2024-08-14]
-                grid.points.emplace_back(transform[1] * x + z * transform[2], values[index],
+                grid.points.emplace_back(transform[1] * x + z * transform[2], values[grid.GetIndex(x, z)],
                                          transform[4] * x + z * transform[5]);
             }
         }
@@ -41,7 +40,7 @@ namespace TrackMapper::Raster {
     bool reprojectOSMPointsIntoRaster(std::vector<OSMPoint> &points, OGRSpatialReference &dstProjRef,
                                       const Point &rasterOrigin) {
         if (dstProjRef.Validate() != OGRERR_NONE)
-             return false;
+            return false;
 
         const GDALReprojectionTransformer transformer(osmPointsProjRef, dstProjRef);
 
@@ -56,4 +55,13 @@ namespace TrackMapper::Raster {
 
         return true;
     }
+
+    void interpolateHeightInGrid(const PointGrid &grid, Point &point) {
+        // TODO: Add bilinear interpolation
+        const int x = std::floor(point.x);
+        const int z = std::floor(point.z);
+
+        point.y = grid.points[grid.GetIndex(x, z)].y;
+    }
+
 } // namespace TrackMapper::Raster

@@ -58,8 +58,14 @@ namespace TrackMapper::Mesh {
 
         for (int i = 1; i < path.points.size() - 1; ++i) {
             // TODO: fix division by zero when consecutive points share same position
-            Vector3 v1 = path.points[i - 1] - path.points[i];
-            Vector3 v2 = path.points[i + 1] - path.points[i];
+            // fix: do calculation without y component to avoid slanted halfway vector
+            // FEATURE: Add slight slanting in corners to create on-camber corners
+            Point3 p1{path.points[i - 1].x(), 0, path.points[i - 1].z()};
+            Point3 p2{path.points[i].x(), 0, path.points[i].z()};
+            Point3 p3{path.points[i + 1].x(), 0, path.points[i + 1].z()};
+            Vector3 v1 = p1 - p2;
+            Vector3 v2 = p3 - p2;
+
             Vector3 n1 = v1 / std::sqrt(v1.squared_length());
             Vector3 n2 = v2 / std::sqrt(v2.squared_length());
             Vector3 h = n1 + n2;
@@ -69,14 +75,13 @@ namespace TrackMapper::Mesh {
             const auto vertexIndexR = mesh.add_vertex(path.points[i] - nh * width);
 
             // tests if v2 points to the left of v1 relative to the horizontal plane
-            if(CGAL::scalar_product(CGAL::cross_product(v2, v1), Vector3(0,1,0)) > 0) {
+            if (CGAL::scalar_product(CGAL::cross_product(v2, v1), Vector3(0, 1, 0)) > 0) {
                 vertex_indices.push_back(vertexIndexL);
                 vertex_indices.push_back(vertexIndexR);
-            }else { // flip order of adding vertices to assure the vertex to the left always gets pushed first
+            } else { // flip order of adding vertices to assure the vertex to the left always gets pushed first
                 vertex_indices.push_back(vertexIndexR);
                 vertex_indices.push_back(vertexIndexL);
             }
-
         }
 
         for (auto i = 0; i < quads; ++i) {
