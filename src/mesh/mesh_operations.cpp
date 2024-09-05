@@ -82,6 +82,8 @@ namespace TrackMapper::Mesh {
 
             // adds vertices from left to right
             for (auto j = 0; j < subdivisions; j++) {
+                // TODO: handle cases where extend overlaps with the extend of the previous point
+                //      -> merge vertices in the middle -> problems with creating faces later
                 const double extend = -width * 0.5 + j * segmentWidth;
                 const auto vertexIndex = mesh.add_vertex(path.points[i] + nh * iterationSign * extend);
                 vertex_indices.push_back(vertexIndex);
