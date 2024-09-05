@@ -88,7 +88,7 @@ void createPath() {
         path.points.emplace_back(p.x, p.y, p.z);
     }
 
-    const auto mesh = TrackMapper::Mesh::meshFromPath(path, 3);
+    const auto mesh = TrackMapper::Mesh::meshFromPath(path, 6, 5);
 
     std::cout << "\nSpecify file output path: (.off .obj .stl .ply .ts .vtp)" << std::endl;
     std::string outFilePath;

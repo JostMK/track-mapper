@@ -13,7 +13,7 @@
 
 namespace TrackMapper::Mesh {
 
-    using Vector3 = Kernel::Vector_3;
+    using CGALVector3 = CGALKernel::Vector_3;
 
     namespace SMS = CGAL::Surface_mesh_simplification;
 
@@ -48,56 +48,62 @@ namespace TrackMapper::Mesh {
         return mesh;
     }
 
-    Mesh meshFromPath(const Path &path, const double width) {
+    /// @note subdivision has to be greater or equal to 2
+    Mesh meshFromPath(const Path &path, const double width, const int subdivisions) {
+        const int segmentCount = subdivisions - 1;
+        const double segmentWidth = width / segmentCount;
+
         Mesh mesh;
         std::vector<Mesh::Vertex_index> vertex_indices;
-        vertex_indices.reserve((path.points.size() - 2) * 2);
+        vertex_indices.reserve((path.points.size() - 2) * subdivisions);
 
-        const auto quads = path.points.size() - 3;
-        mesh.reserve(vertex_indices.size(), 4 * quads + 1, 2 * quads);
+        const int quads = static_cast<int>(path.points.size() - 3) * segmentCount;
+        mesh.reserve(vertex_indices.capacity(), quads * 3 + (path.points.size() - 3) + segmentCount, 2 * quads);
 
-        for (int i = 1; i < path.points.size() - 1; ++i) {
+        for (auto i = 1; i < path.points.size() - 1; ++i) {
             // TODO: fix division by zero when consecutive points share same position
             // fix: do calculation without y component to avoid slanted halfway vector
             // FEATURE: Add slight slanting in corners to create on-camber corners
-            Point3 p1{path.points[i - 1].x(), 0, path.points[i - 1].z()};
-            Point3 p2{path.points[i].x(), 0, path.points[i].z()};
-            Point3 p3{path.points[i + 1].x(), 0, path.points[i + 1].z()};
-            Vector3 v1 = p1 - p2;
-            Vector3 v2 = p3 - p2;
+            const CGALPoint3 p1{path.points[i - 1].x(), 0, path.points[i - 1].z()};
+            const CGALPoint3 p2{path.points[i].x(), 0, path.points[i].z()};
+            const CGALPoint3 p3{path.points[i + 1].x(), 0, path.points[i + 1].z()};
+            const CGALVector3 v1 = p1 - p2;
+            const CGALVector3 v2 = p3 - p2;
 
-            Vector3 n1 = v1 / std::sqrt(v1.squared_length());
-            Vector3 n2 = v2 / std::sqrt(v2.squared_length());
-            Vector3 h = n1 + n2;
-            Vector3 nh = h / std::sqrt(h.squared_length());
-
-            const auto vertexIndexL = mesh.add_vertex(path.points[i] + nh * width);
-            const auto vertexIndexR = mesh.add_vertex(path.points[i] - nh * width);
+            const CGALVector3 n1 = v1 / std::sqrt(v1.squared_length());
+            const CGALVector3 n2 = v2 / std::sqrt(v2.squared_length());
+            const CGALVector3 h = n1 + n2;
+            const CGALVector3 nh = h / std::sqrt(h.squared_length());
 
             // tests if v2 points to the left of v1 relative to the horizontal plane
-            if (CGAL::scalar_product(CGAL::cross_product(v2, v1), Vector3(0, 1, 0)) > 0) {
-                vertex_indices.push_back(vertexIndexL);
-                vertex_indices.push_back(vertexIndexR);
-            } else { // flip order of adding vertices to assure the vertex to the left always gets pushed first
-                vertex_indices.push_back(vertexIndexR);
-                vertex_indices.push_back(vertexIndexL);
+            // flip order of adding vertices to assure the vertices to the left always gets pushed first
+            const int iterationSign =
+                    CGAL::scalar_product(CGAL::cross_product(v2, v1), CGALVector3(0, 1, 0)) > 0 ? 1 : -1;
+
+            // adds vertices from left to right
+            for (auto j = 0; j < subdivisions; j++) {
+                const double extend = -width * 0.5 + j * segmentWidth;
+                const auto vertexIndex = mesh.add_vertex(path.points[i] + nh * iterationSign * extend);
+                vertex_indices.push_back(vertexIndex);
             }
         }
 
-        for (auto i = 0; i < quads; ++i) {
-            const int indexL1 = 2 * i + 0;
-            const int indexR1 = 2 * i + 1;
-            const int indexL2 = 2 * i + 2;
-            const int indexR2 = 2 * i + 3;
-            mesh.add_face(vertex_indices[indexL1], vertex_indices[indexR1], vertex_indices[indexL2]);
-            mesh.add_face(vertex_indices[indexL2], vertex_indices[indexR1], vertex_indices[indexR2]);
+        for (auto i = 1; i < path.points.size() - 3; ++i) {
+            for (int j = 0; j < segmentCount; j++) {
+                const int indexL1 = i * subdivisions + j;
+                const int indexR1 = i * subdivisions + j + 1;
+                const int indexL2 = (i + 1) * subdivisions + j;
+                const int indexR2 = (i + 1) * subdivisions + j + 1;
+                mesh.add_face(vertex_indices[indexL1], vertex_indices[indexR1], vertex_indices[indexL2]);
+                mesh.add_face(vertex_indices[indexL2], vertex_indices[indexR1], vertex_indices[indexR2]);
+            }
         }
 
         return mesh;
     }
 
     int reduceMesh(Mesh &mesh, const double reduction_ratio) {
-        typedef SMS::GarlandHeckbert_plane_policies<Mesh, Kernel> Classic_plane;
+        typedef SMS::GarlandHeckbert_plane_policies<Mesh, CGALKernel> Classic_plane;
         typedef Classic_plane::Get_cost GH_cost;
         typedef Classic_plane::Get_placement GH_placement;
         typedef SMS::Bounded_normal_change_placement<GH_placement> Bounded_GH_placement;
