@@ -8,22 +8,44 @@
 #include <string>
 #include <vector>
 
+#include "gdal_wrapper.h"
+
 namespace TrackMapper::Raster {
+
+    struct OSMPoint {
+        double lat, lng;
+    };
 
     struct Point {
         double x, y, z;
+
+        Point operator-() const { return Point{-x, -y, -z}; }
+        Point operator+(const Point &other) const { return Point{x + other.x, y + other.y, z + other.z}; }
+        Point operator-(const Point &other) const { return Point{x - other.x, y - other.y, z - other.z}; }
+        Point operator*(const double factor) const { return Point{x * factor, y * factor, z * factor}; }
+
+        [[nodiscard]] double Length() const { return sqrt(x * x + y * y + z * z); }
     };
+    inline Point operator*(const double factor, const Point &point) {
+        return Point{point.x * factor, point.y * factor, point.z * factor};
+    }
 
     struct PointGrid {
         std::vector<Point> points;
         int sizeX, sizeY;
         Point origin;
         std::string wkt; // projection information
+
+        [[nodiscard]] int GetIndex(const int x, const int y) const { return y * sizeX + x; }
     };
 
-    PointGrid readRasterData(const std::string &rasterFilePath);
+    PointGrid readRasterData(GDALDatasetWrapper &dataset);
 
-    bool reprojectPointsIntoRaster(const std::string &rasterFilePath, std::vector<Point> &points);
+    bool reprojectOSMPointsIntoRaster(std::vector<OSMPoint> &points, OGRSpatialReference &dstProjRef,
+                                      const Point &rasterOrigin);
+
+    void interpolateHeightInGrid(const PointGrid &grid, Point &point);
+
 } // namespace TrackMapper::Raster
 
 #endif // RASTER_READER_H
