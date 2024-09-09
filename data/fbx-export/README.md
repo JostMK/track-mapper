@@ -1,0 +1,7 @@
+- cube.fbx created with [blender](https://www.blender.org) contains a cube for testing read-in of fbx files
+- plane.fbx created with [exportfbx.cpp](../../experiments/fbx-export/exportfbx.cpp) is in binary format
+  - readable by blender but not by ksEditor - probably FBX SDK 2014 (used by ksEditor) is incompatible with FBX SDK 2020
+- plane-ascii.fbx created with exportfbx.cpp is in ascii format
+  - readable by ksEditor but not by blender (blender only supports binary fbx files)
+- plane-reexport.fbx created with exportfbx.cpp but then imported and reexported with blender
+  - readable by ksEditor - probably since the custom written fbx exporter by blender was created around 2014 (see unofficial [FBX binary file format specification](https://code.blender.org/2013/08/fbx-binary-file-format-specification/))
