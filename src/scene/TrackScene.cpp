@@ -7,10 +7,10 @@
 #include <fbxsdk.h>
 
 namespace TrackMapper::Scene {
-    void AddMeshToScene(const Mesh &mesh, FbxScene *pScene, FbxSurfacePhong *lMaterial);
+    void AddMeshToScene(const SceneMesh &mesh, FbxScene *pScene, FbxSurfacePhong *lMaterial);
     FbxSurfacePhong *CreateMaterial(const std::string &name, const Double3 &color, FbxScene *pScene);
 
-    void TrackScene::AddGrassMesh(Mesh &mesh, const bool hasCollision) {
+    void TrackScene::AddGrassMesh(SceneMesh &mesh, const bool hasCollision) {
         if (hasCollision) {
             mesh.name = mPhysicsCounter + "GRASS";
             mPhysicsCounter++;
@@ -22,7 +22,7 @@ namespace TrackMapper::Scene {
         mGrassMeshes.push_back(mesh);
     }
 
-    void TrackScene::AddRoadMesh(Mesh &mesh) {
+    void TrackScene::AddRoadMesh(SceneMesh &mesh) {
         mesh.name = std::to_string(mPhysicsCounter) + "ROAD";
         mPhysicsCounter++;
 
@@ -40,18 +40,18 @@ namespace TrackMapper::Scene {
 
         // populate FBX scene
         const auto grassMat = CreateMaterial("GrassMat", {.47f, .63f, .29f}, lScene);
-        for (const Mesh &mesh: mGrassMeshes) {
+        for (const auto &mesh: mGrassMeshes) {
             AddMeshToScene(mesh, lScene, grassMat);
         }
 
         const auto roadMat = CreateMaterial("RoadMat", {.28f, .31f, .34f}, lScene);
-        for (const Mesh &mesh: mRoadMeshes) {
+        for (const auto &mesh: mRoadMeshes) {
             AddMeshToScene(mesh, lScene, roadMat);
         }
 
         //const auto nullMat = CreateMaterial("NULL", {0, 0, 0}, lScene);
         //nullMat->TransparencyFactor.Set(1);
-        for (const Mesh &mesh: mEmptyMeshes) {
+        for (const auto &mesh: mEmptyMeshes) {
             FbxNode *lNode = FbxNode::Create(lScene, mesh.name.c_str());
             //lNode->AddMaterial(nullMat);
             lNode->LclTranslation.Set(FbxDouble3{mesh.origin.x, mesh.origin.y, mesh.origin.z});
@@ -85,7 +85,7 @@ namespace TrackMapper::Scene {
         lSdkManager->Destroy();
     }
 
-    void AddMeshToScene(const Mesh &mesh, FbxScene *pScene, FbxSurfacePhong *lMaterial) {
+    void AddMeshToScene(const SceneMesh &mesh, FbxScene *pScene, FbxSurfacePhong *lMaterial) {
         FbxMesh *lMesh = FbxMesh::Create(pScene, "mesh");
 
         const int vertexCount = static_cast<int>(mesh.vertices.size()); // size should always be below 40k

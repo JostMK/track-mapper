@@ -26,7 +26,7 @@ namespace TrackMapper::Scene {
         Double3 normal;
     };
 
-    struct Mesh {
+    struct SceneMesh {
         std::string name;
         Double3 origin;
         Double3 forward;
@@ -39,7 +39,7 @@ namespace TrackMapper::Scene {
          * @param vertexCount the reserved size for vertices
          * @param triangleCount the reserved size for triangle indices
          */
-        Mesh(const Double3 &origin, const int vertexCount, const int triangleCount) : origin(origin), forward{0,0,1} {
+        SceneMesh(const Double3 &origin, const int vertexCount, const int triangleCount) : origin(origin), forward{0,0,1} {
             vertices.reserve(vertexCount);
             triangles.reserve(triangleCount);
         }
@@ -50,14 +50,14 @@ namespace TrackMapper::Scene {
          * @param origin the origin of the mesh in 3d space
          * @param forward the direction the local z axis should point
          */
-        Mesh(std::string name, const Double3 &origin, const Double3 &forward) : name(std::move(name)), origin(origin), forward{forward} {}
+        SceneMesh(std::string name, const Double3 &origin, const Double3 &forward) : name(std::move(name)), origin(origin), forward{forward} {}
     };
 
     class TrackScene {
     public:
-        void AddGrassMesh(Mesh &mesh, bool hasCollision = false);
+        void AddGrassMesh(SceneMesh &mesh, bool hasCollision = false);
 
-        void AddRoadMesh(Mesh &mesh);
+        void AddRoadMesh(SceneMesh &mesh);
 
         /// @note name should follow the naming convention for spawn points used by ksEditor
         void AddSpawnPoint(const std::string& name, const Double3 &position, const Double3 &direction);
@@ -67,9 +67,9 @@ namespace TrackMapper::Scene {
         void Export(const std::string &filePath, bool asciiFormat = true) const;
 
     private:
-        std::vector<Mesh> mGrassMeshes;
-        std::vector<Mesh> mRoadMeshes;
-        std::vector<Mesh> mEmptyMeshes;
+        std::vector<SceneMesh> mGrassMeshes;
+        std::vector<SceneMesh> mRoadMeshes;
+        std::vector<SceneMesh> mEmptyMeshes;
 
         int mGrassCounter = 0;
         int mPhysicsCounter = 1; // objects with a physics id greater 0 have collisions

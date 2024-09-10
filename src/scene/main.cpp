@@ -8,8 +8,8 @@
 
 using namespace TrackMapper::Scene;
 
-Mesh createPlane(const Double3 &origin, const double size) {
-    Mesh mesh(origin, 4, 2);
+SceneMesh createPlane(const Double3 &origin, const double size) {
+    SceneMesh mesh(origin, 4, 2);
 
     const double halfSize = size * .5;
     constexpr Double3 UP{0, 1, 0};
