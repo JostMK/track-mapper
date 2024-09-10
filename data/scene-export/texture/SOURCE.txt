@@ -1,0 +1,4 @@
+asphalt_track_diff_1k.png : https://polyhaven.com/a/asphalt_track CC0 License
+leafy_grass_diff_1k.png   : https://polyhaven.com/a/leafy_grass CC0 License
+
+NULL.dds : is created automatically by ksEditor

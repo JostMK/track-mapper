@@ -21,14 +21,14 @@ void AddPlaneWithMaterial(FbxScene *pScene, const std::string &name, const doubl
 
     // create polygons
     lMesh->BeginPolygon(0); // material index
-    lMesh->AddPolygon(0);
-    lMesh->AddPolygon(1);
+    lMesh->AddPolygon(0); // seams like the winding order of ksEditor is clockwise
     lMesh->AddPolygon(2);
+    lMesh->AddPolygon(1);
     lMesh->EndPolygon();
     lMesh->BeginPolygon(0); // material index
     lMesh->AddPolygon(1);
-    lMesh->AddPolygon(3);
     lMesh->AddPolygon(2);
+    lMesh->AddPolygon(3);
     lMesh->EndPolygon();
 
     // specify normals per control point.
