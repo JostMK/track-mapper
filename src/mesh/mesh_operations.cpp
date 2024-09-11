@@ -34,14 +34,15 @@ namespace TrackMapper::Mesh {
 
         for (int y = 0; y < point_grid.sizeY - 1; ++y) {
             for (int x = 0; x < point_grid.sizeX - 1; ++x) {
+                // NOTE: to conform with ksEditor the winding order has to be clockwise
+                // NOTE: to conform with the coordinate system of fbx files the z axis is extending downwards when
+                // looked at from above and x extending to the right
                 const int indexTL = y * point_grid.sizeX + x;
                 const int indexTR = y * point_grid.sizeX + (x + 1);
                 const int indexBL = (y + 1) * point_grid.sizeX + x;
                 const int indexBR = (y + 1) * point_grid.sizeX + (x + 1);
-                // TODO: fix normals by inverting winding order, inverted because image extends downwards invers to 3d
-                // y-axis
-                mesh.add_face(vertex_indices[indexTL], vertex_indices[indexBL], vertex_indices[indexTR]);
-                mesh.add_face(vertex_indices[indexTR], vertex_indices[indexBL], vertex_indices[indexBR]);
+                mesh.add_face(vertex_indices[indexBL], vertex_indices[indexTL], vertex_indices[indexBR]);
+                mesh.add_face(vertex_indices[indexBR], vertex_indices[indexTL], vertex_indices[indexTR]);
             }
         }
 
@@ -96,8 +97,9 @@ namespace TrackMapper::Mesh {
                 const int indexR1 = i * subdivisions + j + 1;
                 const int indexL2 = (i + 1) * subdivisions + j;
                 const int indexR2 = (i + 1) * subdivisions + j + 1;
-                mesh.add_face(vertex_indices[indexL1], vertex_indices[indexR1], vertex_indices[indexL2]);
-                mesh.add_face(vertex_indices[indexL2], vertex_indices[indexR1], vertex_indices[indexR2]);
+                // NOTE: to conform with ksEditor the winding order has to be clockwise
+                mesh.add_face(vertex_indices[indexL1], vertex_indices[indexL2], vertex_indices[indexR1]);
+                mesh.add_face(vertex_indices[indexR1], vertex_indices[indexL2], vertex_indices[indexR2]);
             }
         }
 

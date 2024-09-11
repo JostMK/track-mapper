@@ -77,6 +77,7 @@ namespace TrackMapper::Scene {
         }
 
         // export scene
+        // Note: no need to change coordinate system, this is done by ksEditor automatically on import
         lExporter->Export(lScene);
 
         // clean up
