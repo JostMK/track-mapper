@@ -14,19 +14,19 @@
 namespace TrackMapper::Mesh {
     using CGALKernel = CGAL::Simple_cartesian<double>;
     using CGALPoint3 = CGALKernel::Point_3;
-    using Mesh = CGAL::Surface_mesh<CGALPoint3>;
+    using CGALMesh = CGAL::Surface_mesh<CGALPoint3>;
 
     struct Path {
         std::vector<CGALPoint3> points;
     };
 
-    Mesh meshFromRasterData(const Raster::PointGrid &point_grid);
+    CGALMesh meshFromRasterData(const Raster::PointGrid &point_grid);
 
-    Mesh meshFromPath(const Path &path, double width, int subdivisions);
+    CGALMesh meshFromPath(const Path &path, double width, int subdivisions);
 
-    int reduceMesh(Mesh &mesh, double reduction_ratio);
+    int reduceMesh(CGALMesh &mesh, double reduction_ratio);
 
-    void writeMeshToFile(const Mesh &mesh, const std::string &filepath);
+    void writeMeshToFile(const CGALMesh &mesh, const std::string &filepath);
 
 } // namespace TrackMapper::Mesh
 

@@ -3,8 +3,10 @@ project(TrackMapper)
 
 set(CMAKE_CXX_STANDARD 23)
 
+add_subdirectory(src/app)
 add_subdirectory(src/graph)
 add_subdirectory(src/mesh)
+add_subdirectory(src/scene)
 add_subdirectory(src/web)
 
 add_subdirectory(experiments)

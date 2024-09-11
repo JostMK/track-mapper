@@ -15,6 +15,8 @@ add_library(TrackMapperMeshLib STATIC
         mesh_operations.cpp
         gdal_wrapper.cpp
         gdal_wrapper.h
+        mesh_converter.h
+        mesh_converter.cpp
 )
 
 target_link_libraries(TrackMapperMeshLib CGAL::CGAL GDAL::GDAL)

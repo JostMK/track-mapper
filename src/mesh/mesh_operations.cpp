@@ -17,9 +17,9 @@ namespace TrackMapper::Mesh {
 
     namespace SMS = CGAL::Surface_mesh_simplification;
 
-    Mesh meshFromRasterData(const Raster::PointGrid &point_grid) {
-        Mesh mesh;
-        std::vector<Mesh::Vertex_index> vertex_indices;
+    CGALMesh meshFromRasterData(const Raster::PointGrid &point_grid) {
+        CGALMesh mesh;
+        std::vector<CGALMesh::Vertex_index> vertex_indices;
         vertex_indices.reserve(point_grid.points.size());
 
         const auto quads = (point_grid.sizeX - 1) * (point_grid.sizeY - 1);
@@ -49,12 +49,12 @@ namespace TrackMapper::Mesh {
     }
 
     /// @note subdivision has to be greater or equal to 2
-    Mesh meshFromPath(const Path &path, const double width, const int subdivisions) {
+    CGALMesh meshFromPath(const Path &path, const double width, const int subdivisions) {
         const int segmentCount = subdivisions - 1;
         const double segmentWidth = width / segmentCount;
 
-        Mesh mesh;
-        std::vector<Mesh::Vertex_index> vertex_indices;
+        CGALMesh mesh;
+        std::vector<CGALMesh::Vertex_index> vertex_indices;
         vertex_indices.reserve((path.points.size() - 2) * subdivisions);
 
         const int quads = static_cast<int>(path.points.size() - 3) * segmentCount;
@@ -104,8 +104,8 @@ namespace TrackMapper::Mesh {
         return mesh;
     }
 
-    int reduceMesh(Mesh &mesh, const double reduction_ratio) {
-        typedef SMS::GarlandHeckbert_plane_policies<Mesh, CGALKernel> Classic_plane;
+    int reduceMesh(CGALMesh &mesh, const double reduction_ratio) {
+        typedef SMS::GarlandHeckbert_plane_policies<CGALMesh, CGALKernel> Classic_plane;
         typedef Classic_plane::Get_cost GH_cost;
         typedef Classic_plane::Get_placement GH_placement;
         typedef SMS::Bounded_normal_change_placement<GH_placement> Bounded_GH_placement;
@@ -115,7 +115,7 @@ namespace TrackMapper::Mesh {
         const GH_placement &gh_placement = gh_policies.get_placement();
         const Bounded_GH_placement placement(gh_placement);
 
-        const SMS::Edge_count_ratio_stop_predicate<Mesh> stop(reduction_ratio);
+        const SMS::Edge_count_ratio_stop_predicate<CGALMesh> stop(reduction_ratio);
 
         const int edgesRemoved =
                 SMS::edge_collapse(mesh, stop, CGAL::parameters::get_cost(gh_cost).get_placement(placement));
@@ -123,7 +123,7 @@ namespace TrackMapper::Mesh {
         return edgesRemoved;
     }
 
-    void writeMeshToFile(const Mesh &mesh, const std::string &filepath) {
+    void writeMeshToFile(const CGALMesh &mesh, const std::string &filepath) {
         CGAL::IO::write_polygon_mesh(filepath, mesh, CGAL::parameters::stream_precision(17));
     }
 } // namespace TrackMapper::Mesh
