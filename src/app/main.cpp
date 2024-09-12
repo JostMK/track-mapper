@@ -10,16 +10,29 @@
 #include "../scene/TrackScene.h"
 
 using TrackScene = TrackMapper::Scene::TrackScene;
-using Point3D = TrackMapper::Mesh::CGALPoint3;
+using PointGrid = TrackMapper::Raster::PointGrid;
+using OSMPoint = TrackMapper::Raster::OSMPoint;
+using Point3D = TrackMapper::Raster::Point;
 
-void addTerrain(TrackScene &scene, Point3D &origin, bool originIsSet);
-void addRoad(TrackScene &scene, const Point3D &origin, bool originIsSet);
-void writeOut(const TrackScene &scene);
+
+struct Config {
+    TrackScene scene;
+    std::string wkt;
+    Point3D origin{};
+    bool originIsSet = false;
+    bool markersAreSet = false;
+
+    std::vector<PointGrid> rasters;
+};
+
+void addTerrain(Config &config);
+void addRoad(Config &config);
+void writeOut(const Config &config);
+OGRSpatialReference getValidSpatRef(Config &config);
+std::vector<OSMPoint> readPathFromCSV(const std::string &filePath);
 
 int main() {
-    TrackScene scene;
-    Point3D origin;
-    bool originIsSet = false;
+    Config config;
 
     bool quit = false;
     while (!quit) {
@@ -32,14 +45,13 @@ int main() {
                 quit = true;
                 break;
             case 't':
-                addTerrain(scene, origin, originIsSet);
-                originIsSet = true;
+                addTerrain(config);
                 break;
             case 'r':
-                addRoad(scene, origin, originIsSet);
+                addRoad(config);
                 break;
             case 'e':
-                writeOut(scene);
+                writeOut(config);
                 quit = true;
                 break;
             default:
@@ -51,7 +63,7 @@ int main() {
     }
 }
 
-void addTerrain(TrackScene &scene, Point3D &origin, const bool originIsSet) {
+void addTerrain(Config &config) {
     std::cout << "Enter path to geo raster file:" << std::endl;
     std::string inFilePath;
     std::cin >> inFilePath;
@@ -68,31 +80,108 @@ void addTerrain(TrackScene &scene, Point3D &origin, const bool originIsSet) {
     TrackMapper::Mesh::reduceMesh(mesh, reductionRation);
 
     std::cout << "Task 4/4: Adding mesh to scene" << std::endl;
-    if (!originIsSet) {
-        origin = {pointGrid.origin.x, pointGrid.origin.y, pointGrid.origin.z};
+    if (!config.originIsSet) {
+        config.origin = pointGrid.origin;
+        config.wkt = pointGrid.wkt;
+        config.originIsSet = true;
     }
-    auto meshOffset = Point3D{pointGrid.origin.x, pointGrid.origin.y, pointGrid.origin.z} - origin;
-    auto sceneMesh = TrackMapper::Mesh::cgalToSceneMesh(mesh, {meshOffset.x(), meshOffset.y(), meshOffset.z()});
 
-    scene.AddGrassMesh(sceneMesh);
+    const auto [x, y, z] = pointGrid.origin - config.origin;
+    auto sceneMesh = TrackMapper::Mesh::cgalToSceneMesh(mesh, {x, y, z});
+
+    config.scene.AddGrassMesh(sceneMesh);
+    config.rasters.push_back(pointGrid);
     std::cout << "Finished: Added terrain with " << sceneMesh.vertices.size() << " vertices to scene" << std::endl;
 }
 
-void addRoad(TrackScene &scene, const Point3D &origin, const bool originIsSet) {
-    if (!originIsSet) {
+void addRoad(Config &config) {
+    if (!config.originIsSet) {
         std::cout << "Please first add at least one terrain befor adding any road" << std::endl;
         return;
     }
 
-    // TODO implement
+    std::cout << "Enter path to csv file containing the waypoints of the road:" << std::endl;
+    std::string inFilePath;
+    std::cin >> inFilePath;
+
+    std::vector<OSMPoint> points = readPathFromCSV(inFilePath);
+
+    OGRSpatialReference rasterSpatRef = getValidSpatRef(config);
+    TrackMapper::Raster::reprojectOSMPoints(points, rasterSpatRef);
+
+    // TODO: interpolate path to have equal point density -> using spline
+    TrackMapper::Mesh::Path path;
+    path.points.reserve(points.size());
+    for (auto [x, y]: points) {
+        // TODO: determine the correct raster the point lies in
+        auto currentRaster = config.rasters[0];
+        Point3D p{x-currentRaster.origin.x, 0, y-currentRaster.origin.z};
+        TrackMapper::Raster::interpolateHeightInGrid(currentRaster, p);
+
+        const auto [offsetX, offsetY, offsetZ] = config.origin - currentRaster.origin;
+        path.points.emplace_back(p.x - offsetX, p.y - offsetY, p.z - offsetZ);
+    }
+
+    if (!config.markersAreSet) {
+        const auto pit = Point3D{path.points[3].x(), path.points[3].y() + 1, path.points[3].z()};
+        const auto dir =
+                Point3D{path.points[4].x(), 0, path.points[4].z()} - Point3D{path.points[3].x(), 0, path.points[3].z()};
+        const auto [startX, startY, startZ] = pit + (3. / pit.Length()) * dir;
+
+        // TODO: fix spawn orientation
+        config.scene.AddSpawnPoint("AC_START_0", {pit.x,pit.y,pit.z}, {dir.x,0,dir.z});
+        config.scene.AddSpawnPoint("AC_PIT_0", {startX,startY,startZ}, {dir.x,0,dir.z});
+
+        config.markersAreSet = true;
+    }
+
+    // TODO: make width and subdivisions configurable
+    const auto mesh = TrackMapper::Mesh::meshFromPath(path, 6, 5);
+    // TODO: maybe set origin to position of first path node
+    auto sceneMesh = TrackMapper::Mesh::cgalToSceneMesh(mesh, {0,0,0});
+
+    config.scene.AddRoadMesh(sceneMesh);
 }
 
-void writeOut(const TrackScene &scene) {
+void writeOut(const Config &config) {
     std::cout << "Enter path for exported fbx file:" << std::endl;
     std::string outFilePath;
     std::cin >> outFilePath;
 
-    scene.Export(outFilePath);
+    config.scene.Export(outFilePath);
 
     std::cout << "File successfully written to:\n" << outFilePath << std::endl;
+}
+
+OGRSpatialReference getValidSpatRef(Config &config) {
+    OGRSpatialReference spatRef(config.wkt.c_str());
+
+    while (spatRef.Validate() != OGRERR_NONE) {
+        std::cout << "No valid projection reference could be determined!" << std::endl;
+        std::cout << "Please specify projection reference manually by entering a valid OGC WKT:" << std::endl;
+        std::string inProjRef;
+        std::getline(std::cin >> std::ws, inProjRef);
+
+        spatRef = OGRSpatialReference(inProjRef.c_str());
+        config.wkt = spatRef.exportToWkt();
+    }
+
+    return spatRef;
+}
+
+std::vector<OSMPoint> readPathFromCSV(const std::string &filePath) {
+    std::vector<OSMPoint> points;
+    if (std::ifstream file(filePath); file.is_open()) {
+        std::string line;
+        while (file.good()) {
+            std::getline(file, line);
+            const size_t seperator = line.find_first_of(';');
+            const double lat = std::stod(line.substr(0, seperator));
+            const double lng = std::stod(line.substr(seperator + 1));
+            points.emplace_back(lat, lng);
+        }
+        file.close();
+    }
+
+    return points;
 }

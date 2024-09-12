@@ -40,8 +40,7 @@ namespace TrackMapper::Raster {
         return grid;
     }
 
-    bool reprojectOSMPointsIntoRaster(std::vector<OSMPoint> &points, OGRSpatialReference &dstProjRef,
-                                      const Point &rasterOrigin) {
+    bool reprojectOSMPoints(std::vector<OSMPoint> &points, OGRSpatialReference &dstProjRef) {
         if (dstProjRef.Validate() != OGRERR_NONE)
             return false;
 
@@ -53,10 +52,6 @@ namespace TrackMapper::Raster {
 
             // Note: to conform with the coordinate system of fbx files the z axis has to be inverted
             lng *= -1;
-
-            // align raster and path origin
-            lat -= rasterOrigin.x;
-            lng -= rasterOrigin.z;
         }
 
         return true;

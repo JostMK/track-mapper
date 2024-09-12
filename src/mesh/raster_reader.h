@@ -41,8 +41,7 @@ namespace TrackMapper::Raster {
 
     PointGrid readRasterData(GDALDatasetWrapper &dataset);
 
-    bool reprojectOSMPointsIntoRaster(std::vector<OSMPoint> &points, OGRSpatialReference &dstProjRef,
-                                      const Point &rasterOrigin);
+    bool reprojectOSMPoints(std::vector<OSMPoint> &points, OGRSpatialReference &dstProjRef);
 
     void interpolateHeightInGrid(const PointGrid &grid, Point &point);
 
