@@ -112,6 +112,7 @@ void addRoad(Config &config) {
     OGRSpatialReference rasterSpatRef = getValidSpatRef(config);
     TrackMapper::Raster::reprojectOSMPoints(points, rasterSpatRef);
 
+#if INTERPOLATE
     // interpolate points for more height sampling
     std::cout << "Task 3/5: Interpolating points for more height details" << std::endl;
     std::vector<Point3D> rawPoints;
@@ -136,7 +137,6 @@ void addRoad(Config &config) {
     samples = TrackMapper::Mesh::interpolateCatmullRom(samples, 0.25);
 
     // place points for mesh
-    std::cout << "Task 4/5: Creating mesh from points" << std::endl;
     TrackMapper::Mesh::Path path;
     path.points.reserve(points.size());
     for (auto [x, y, z]: samples) {
@@ -146,12 +146,27 @@ void addRoad(Config &config) {
         const auto [offsetX, offsetY, offsetZ] = config.origin - currentRaster.origin;
         path.points.emplace_back(x - offsetX, y - offsetY, z - offsetZ);
     }
+#else
+    // place points for mesh
+    std::cout << "Task 3/5: Placing road onto terrain" << std::endl;
+    TrackMapper::Mesh::Path path;
+    path.points.reserve(points.size());
+    for (auto [x, y]: points) {
+        // TODO: determine the correct raster the point lies in
+        const auto currentRaster = config.rasters[0];
+        Point3D p{x - currentRaster.origin.x, 0, y - currentRaster.origin.z};
+        TrackMapper::Raster::interpolateHeightInGrid(currentRaster, p);
+
+        const auto [offsetX, offsetY, offsetZ] = config.origin - currentRaster.origin;
+        path.points.emplace_back(p.x - offsetX, p.y - offsetY, p.z - offsetZ);
+    }
+#endif
 
     // set pit spawn point and start line (minimum of required markers for functioning map)
     if (!config.markersAreSet) {
-        const auto pit = Point3D{path.points[12].x(), path.points[12].y() + 1, path.points[12].z()};
+        const auto pit = Point3D{path.points[3].x(), path.points[3].y() + 1, path.points[3].z()};
         const auto dir =
-                Point3D{path.points[16].x(), 0, path.points[16].z()} - Point3D{path.points[16].x(), 0, path.points[3].z()};
+                Point3D{path.points[4].x(), 0, path.points[4].z()} - Point3D{path.points[3].x(), 0, path.points[3].z()};
         const auto [startX, startY, startZ] = pit + (3. / pit.Length()) * dir;
 
         // TODO: fix spawn orientation
@@ -163,6 +178,7 @@ void addRoad(Config &config) {
 
     // create mesh from path and add it to the scene
     // TODO: make width and subdivisions configurable
+    std::cout << "Task 4/5: Creating mesh from points" << std::endl;
     const auto mesh = TrackMapper::Mesh::meshFromPath(path, 6, 5);
     // TODO: maybe set origin to position of first path node
 
