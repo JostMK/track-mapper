@@ -64,7 +64,7 @@ namespace TrackMapper::Mesh {
         for (auto i = 1; i < path.points.size() - 1; ++i) {
             // TODO: fix division by zero when consecutive points share same position
             // fix: do calculation without y component to avoid slanted halfway vector
-            // FEATURE: Add slight slanting in corners to create on-camber corners
+            // TODO: Add slight slanting in corners to create on-camber corners
             const CGALPoint3 p1{path.points[i - 1].x(), 0, path.points[i - 1].z()};
             const CGALPoint3 p2{path.points[i].x(), 0, path.points[i].z()};
             const CGALPoint3 p3{path.points[i + 1].x(), 0, path.points[i + 1].z()};
@@ -91,7 +91,7 @@ namespace TrackMapper::Mesh {
             }
         }
 
-        for (auto i = 1; i < path.points.size() - 3; ++i) {
+        for (auto i = 0; i < path.points.size() - 3; ++i) {
             for (int j = 0; j < segmentCount; j++) {
                 const int indexL1 = i * subdivisions + j;
                 const int indexR1 = i * subdivisions + j + 1;
