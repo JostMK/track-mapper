@@ -62,9 +62,9 @@ namespace TrackMapper::Raster {
         const int x = std::floor(point.x);
         // Note: to conform with the coordinate system of fbx files the z axis is inverted so for going back into raster
         // space it needs to be inverted again
-        const int z = std::floor(-point.z);
+        const int y = std::floor(-point.z);
 
-        point.y = grid.points[grid.GetIndex(x, z)].y;
+        point.y = grid.points[grid.GetIndex(x, y)].y;
     }
 
 } // namespace TrackMapper::Raster

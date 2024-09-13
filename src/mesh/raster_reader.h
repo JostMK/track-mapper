@@ -24,7 +24,8 @@ namespace TrackMapper::Raster {
         Point operator-(const Point &other) const { return Point{x - other.x, y - other.y, z - other.z}; }
         Point operator*(const double factor) const { return Point{x * factor, y * factor, z * factor}; }
 
-        [[nodiscard]] double Length() const { return sqrt(x * x + y * y + z * z); }
+        [[nodiscard]] double SqLength() const { return x * x + y * y + z * z; }
+        [[nodiscard]] double Length() const { return sqrt(SqLength()); }
     };
     inline Point operator*(const double factor, const Point &point) {
         return Point{point.x * factor, point.y * factor, point.z * factor};

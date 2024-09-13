@@ -4,6 +4,7 @@
 
 #include <iostream>
 
+#include "../mesh/interpolation.h"
 #include "../mesh/mesh_converter.h"
 #include "../mesh/mesh_operations.h"
 #include "../mesh/raster_reader.h"
@@ -109,19 +110,31 @@ void addRoad(Config &config) {
     OGRSpatialReference rasterSpatRef = getValidSpatRef(config);
     TrackMapper::Raster::reprojectOSMPoints(points, rasterSpatRef);
 
-    // TODO: interpolate path to have equal point density -> using spline
+    // interpolate points for equal point density
+    std::vector<Point3D> rawPoints;
+    rawPoints.reserve(points.size());
+    for (auto [x, y]: points) { // get point height
+        // TODO: determine the correct raster the point lies in
+        const auto currentRaster = config.rasters[0];
+        Point3D p{x - currentRaster.origin.x, 0, y - currentRaster.origin.z};
+        TrackMapper::Raster::interpolateHeightInGrid(currentRaster, p);
+        rawPoints.push_back(p);
+    }
+    auto samples = TrackMapper::Mesh::interpolateCatmullRom(rawPoints, 1000);
+
+    // update height of interpolated points
     TrackMapper::Mesh::Path path;
     path.points.reserve(points.size());
-    for (auto [x, y]: points) {
-        // TODO: determine the correct raster the point lies in
-        auto currentRaster = config.rasters[0];
-        Point3D p{x-currentRaster.origin.x, 0, y-currentRaster.origin.z};
+    for (auto p: samples) {
+        const auto currentRaster = config.rasters[0];
         TrackMapper::Raster::interpolateHeightInGrid(currentRaster, p);
 
+        // TODO: determine the correct raster the point lies in
         const auto [offsetX, offsetY, offsetZ] = config.origin - currentRaster.origin;
         path.points.emplace_back(p.x - offsetX, p.y - offsetY, p.z - offsetZ);
     }
 
+    // set pit spawn point and start line (minimum of required markers for functioning map)
     if (!config.markersAreSet) {
         const auto pit = Point3D{path.points[3].x(), path.points[3].y() + 1, path.points[3].z()};
         const auto dir =
@@ -129,16 +142,17 @@ void addRoad(Config &config) {
         const auto [startX, startY, startZ] = pit + (3. / pit.Length()) * dir;
 
         // TODO: fix spawn orientation
-        config.scene.AddSpawnPoint("AC_START_0", {pit.x,pit.y,pit.z}, {dir.x,0,dir.z});
-        config.scene.AddSpawnPoint("AC_PIT_0", {startX,startY,startZ}, {dir.x,0,dir.z});
+        config.scene.AddSpawnPoint("AC_START_0", {pit.x, pit.y, pit.z}, {dir.x, 0, dir.z});
+        config.scene.AddSpawnPoint("AC_PIT_0", {startX, startY, startZ}, {dir.x, 0, dir.z});
 
         config.markersAreSet = true;
     }
 
+    // create mesh from path and add it to the scene
     // TODO: make width and subdivisions configurable
     const auto mesh = TrackMapper::Mesh::meshFromPath(path, 6, 5);
     // TODO: maybe set origin to position of first path node
-    auto sceneMesh = TrackMapper::Mesh::cgalToSceneMesh(mesh, {0,0,0});
+    auto sceneMesh = TrackMapper::Mesh::cgalToSceneMesh(mesh, {0, 0, 0});
 
     config.scene.AddRoadMesh(sceneMesh);
 }
@@ -148,7 +162,7 @@ void writeOut(const Config &config) {
     std::string outFilePath;
     std::cin >> outFilePath;
 
-    config.scene.Export(outFilePath);
+    config.scene.Export(outFilePath, false);
 
     std::cout << "File successfully written to:\n" << outFilePath << std::endl;
 }

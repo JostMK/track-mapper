@@ -78,8 +78,7 @@ void createPath() {
     }
 
     TrackMapper::Raster::reprojectOSMPoints(points, dstProjRef);
-
-    // TODO: interpolate path to have equal point density -> using spline
+    
     TrackMapper::Mesh::Path path;
     path.points.reserve(points.size());
     for (auto [x, y]: points) {
