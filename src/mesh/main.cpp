@@ -78,7 +78,7 @@ void createPath() {
     }
 
     TrackMapper::Raster::reprojectOSMPoints(points, dstProjRef);
-    
+
     TrackMapper::Mesh::Path path;
     path.points.reserve(points.size());
     for (auto [x, y]: points) {

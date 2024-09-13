@@ -105,12 +105,15 @@ void addRoad(Config &config) {
     std::string inFilePath;
     std::cin >> inFilePath;
 
+    std::cout << "Task 1/5: Reading path data from csv file" << std::endl;
     std::vector<OSMPoint> points = readPathFromCSV(inFilePath);
 
+    std::cout << "Task 2/5: Reprojecting points into terrain" << std::endl;
     OGRSpatialReference rasterSpatRef = getValidSpatRef(config);
     TrackMapper::Raster::reprojectOSMPoints(points, rasterSpatRef);
 
-    // interpolate points for equal point density
+    // interpolate points for more height sampling
+    std::cout << "Task 3/5: Interpolating points for more height details" << std::endl;
     std::vector<Point3D> rawPoints;
     rawPoints.reserve(points.size());
     for (auto [x, y]: points) { // get point height
@@ -120,25 +123,35 @@ void addRoad(Config &config) {
         TrackMapper::Raster::interpolateHeightInGrid(currentRaster, p);
         rawPoints.push_back(p);
     }
-    auto samples = TrackMapper::Mesh::interpolateCatmullRom(rawPoints, 1000);
+    auto samples = TrackMapper::Mesh::subdivideCatmullRom(rawPoints, 4);
 
     // update height of interpolated points
-    TrackMapper::Mesh::Path path;
-    path.points.reserve(points.size());
-    for (auto p: samples) {
+    for (auto &p: samples) {
+        // TODO: determine the correct raster the point lies in
         const auto currentRaster = config.rasters[0];
         TrackMapper::Raster::interpolateHeightInGrid(currentRaster, p);
+    }
 
+    // interpolate for more mesh density and smoothing
+    samples = TrackMapper::Mesh::interpolateCatmullRom(samples, 0.25);
+
+    // place points for mesh
+    std::cout << "Task 4/5: Creating mesh from points" << std::endl;
+    TrackMapper::Mesh::Path path;
+    path.points.reserve(points.size());
+    for (auto [x, y, z]: samples) {
         // TODO: determine the correct raster the point lies in
+        // ReSharper disable once CppUseStructuredBinding
+        const auto currentRaster = config.rasters[0];
         const auto [offsetX, offsetY, offsetZ] = config.origin - currentRaster.origin;
-        path.points.emplace_back(p.x - offsetX, p.y - offsetY, p.z - offsetZ);
+        path.points.emplace_back(x - offsetX, y - offsetY, z - offsetZ);
     }
 
     // set pit spawn point and start line (minimum of required markers for functioning map)
     if (!config.markersAreSet) {
-        const auto pit = Point3D{path.points[3].x(), path.points[3].y() + 1, path.points[3].z()};
+        const auto pit = Point3D{path.points[12].x(), path.points[12].y() + 1, path.points[12].z()};
         const auto dir =
-                Point3D{path.points[4].x(), 0, path.points[4].z()} - Point3D{path.points[3].x(), 0, path.points[3].z()};
+                Point3D{path.points[16].x(), 0, path.points[16].z()} - Point3D{path.points[16].x(), 0, path.points[3].z()};
         const auto [startX, startY, startZ] = pit + (3. / pit.Length()) * dir;
 
         // TODO: fix spawn orientation
@@ -152,9 +165,12 @@ void addRoad(Config &config) {
     // TODO: make width and subdivisions configurable
     const auto mesh = TrackMapper::Mesh::meshFromPath(path, 6, 5);
     // TODO: maybe set origin to position of first path node
-    auto sceneMesh = TrackMapper::Mesh::cgalToSceneMesh(mesh, {0, 0, 0});
 
+    std::cout << "Task 5/5: Adding mesh to scene" << std::endl;
+    auto sceneMesh = TrackMapper::Mesh::cgalToSceneMesh(mesh, {0, 0, 0});
     config.scene.AddRoadMesh(sceneMesh);
+
+    std::cout << "Finished: Added road with " << sceneMesh.vertices.size() << " vertices to scene" << std::endl;
 }
 
 void writeOut(const Config &config) {
@@ -162,7 +178,7 @@ void writeOut(const Config &config) {
     std::string outFilePath;
     std::cin >> outFilePath;
 
-    config.scene.Export(outFilePath, false);
+    config.scene.Export(outFilePath, true);
 
     std::cout << "File successfully written to:\n" << outFilePath << std::endl;
 }
