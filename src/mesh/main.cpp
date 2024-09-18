@@ -77,13 +77,12 @@ void createPath() {
         dstProjRef = OGRSpatialReference(inProjRef.c_str());
     }
 
-    TrackMapper::Raster::reprojectOSMPointsIntoRaster(points, dstProjRef, grid.origin);
+    TrackMapper::Raster::reprojectOSMPoints(points, dstProjRef);
 
-    // TODO: interpolate path to have equal point density -> using spline
     TrackMapper::Mesh::Path path;
     path.points.reserve(points.size());
     for (auto [x, y]: points) {
-        TrackMapper::Raster::Point p{x, 0, y};
+        TrackMapper::Raster::Point p{x - grid.origin.x, 0, y - grid.origin.z};
         TrackMapper::Raster::interpolateHeightInGrid(grid, p);
         path.points.emplace_back(p.x, p.y, p.z);
     }

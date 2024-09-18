@@ -29,7 +29,7 @@ namespace TrackMapper::Scene {
         mRoadMeshes.push_back(mesh);
     }
 
-    void TrackScene::AddSpawnPoint(const std::string& name, const Double3 &position, const Double3 &direction) {
+    void TrackScene::AddSpawnPoint(const std::string &name, const Double3 &position, const Double3 &direction) {
         mEmptyMeshes.emplace_back(name, position, direction);
     }
 
@@ -49,17 +49,17 @@ namespace TrackMapper::Scene {
             AddMeshToScene(mesh, lScene, roadMat);
         }
 
-        //const auto nullMat = CreateMaterial("NULL", {0, 0, 0}, lScene);
-        //nullMat->TransparencyFactor.Set(1);
+        // const auto nullMat = CreateMaterial("NULL", {0, 0, 0}, lScene);
+        // nullMat->TransparencyFactor.Set(1);
         for (const auto &mesh: mEmptyMeshes) {
             FbxNode *lNode = FbxNode::Create(lScene, mesh.name.c_str());
-            //lNode->AddMaterial(nullMat);
+            // lNode->AddMaterial(nullMat);
             lNode->LclTranslation.Set(FbxDouble3{mesh.origin.x, mesh.origin.y, mesh.origin.z});
 
             FbxVector4 angles;
-            FbxVector4 normForward{0,0,1,1};
-            FbxVector4 meshForward{mesh.forward.x, mesh.forward.y, mesh.forward.z,1};
-            FbxVector4::AxisAlignmentInEulerAngle({0,0,0,1}, meshForward, normForward, angles);
+            FbxVector4 normForward{0, 0, 1, 1};
+            FbxVector4 meshForward{mesh.forward.x, mesh.forward.y, mesh.forward.z, 1};
+            FbxVector4::AxisAlignmentInEulerAngle({0, 0, 0, 1}, normForward, meshForward, angles);
             lNode->LclRotation.Set(FbxDouble3{angles[0], angles[1], angles[2]});
 
             lScene->GetRootNode()->AddChild(lNode);
@@ -77,6 +77,7 @@ namespace TrackMapper::Scene {
         }
 
         // export scene
+        // Note: no need to change coordinate system, this is done by ksEditor automatically on import
         lExporter->Export(lScene);
 
         // clean up

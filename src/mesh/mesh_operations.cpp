@@ -34,14 +34,15 @@ namespace TrackMapper::Mesh {
 
         for (int y = 0; y < point_grid.sizeY - 1; ++y) {
             for (int x = 0; x < point_grid.sizeX - 1; ++x) {
+                // NOTE: to conform with ksEditor the winding order has to be clockwise
+                // NOTE: to conform with the coordinate system of fbx files the z axis is extending downwards when
+                // looked at from above and x extending to the right
                 const int indexTL = y * point_grid.sizeX + x;
                 const int indexTR = y * point_grid.sizeX + (x + 1);
                 const int indexBL = (y + 1) * point_grid.sizeX + x;
                 const int indexBR = (y + 1) * point_grid.sizeX + (x + 1);
-                // TODO: fix normals by inverting winding order, inverted because image extends downwards invers to 3d
-                // y-axis
-                mesh.add_face(vertex_indices[indexTL], vertex_indices[indexBL], vertex_indices[indexTR]);
-                mesh.add_face(vertex_indices[indexTR], vertex_indices[indexBL], vertex_indices[indexBR]);
+                mesh.add_face(vertex_indices[indexBL], vertex_indices[indexTL], vertex_indices[indexBR]);
+                mesh.add_face(vertex_indices[indexBR], vertex_indices[indexTL], vertex_indices[indexTR]);
             }
         }
 
@@ -63,7 +64,7 @@ namespace TrackMapper::Mesh {
         for (auto i = 1; i < path.points.size() - 1; ++i) {
             // TODO: fix division by zero when consecutive points share same position
             // fix: do calculation without y component to avoid slanted halfway vector
-            // FEATURE: Add slight slanting in corners to create on-camber corners
+            // TODO: Add slight slanting in corners to create on-camber corners
             const CGALPoint3 p1{path.points[i - 1].x(), 0, path.points[i - 1].z()};
             const CGALPoint3 p2{path.points[i].x(), 0, path.points[i].z()};
             const CGALPoint3 p3{path.points[i + 1].x(), 0, path.points[i + 1].z()};
@@ -90,14 +91,15 @@ namespace TrackMapper::Mesh {
             }
         }
 
-        for (auto i = 1; i < path.points.size() - 3; ++i) {
+        for (auto i = 0; i < path.points.size() - 3; ++i) {
             for (int j = 0; j < segmentCount; j++) {
                 const int indexL1 = i * subdivisions + j;
                 const int indexR1 = i * subdivisions + j + 1;
                 const int indexL2 = (i + 1) * subdivisions + j;
                 const int indexR2 = (i + 1) * subdivisions + j + 1;
-                mesh.add_face(vertex_indices[indexL1], vertex_indices[indexR1], vertex_indices[indexL2]);
-                mesh.add_face(vertex_indices[indexL2], vertex_indices[indexR1], vertex_indices[indexR2]);
+                // NOTE: to conform with ksEditor the winding order has to be clockwise
+                mesh.add_face(vertex_indices[indexL1], vertex_indices[indexL2], vertex_indices[indexR1]);
+                mesh.add_face(vertex_indices[indexR1], vertex_indices[indexL2], vertex_indices[indexR2]);
             }
         }
 
