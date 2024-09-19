@@ -36,23 +36,22 @@
             </span>
 
             <span class="input-option">
-                <input type="button" value="Select Path" class="input-btn">
+                <div class="inline-child-spaced">
+                    <input type="button" value="Add Path" class="input-btn" id="path-add-btn">
+
+                    <label class="checkbox" id="path-closed-checkbox">
+                        <input type="checkbox" name="track-closed" id="input-track-closed">
+                        Close loop
+                    </label>
+                </div>
             </span>
 
             <span class="input-option">
-                <label class="checkbox">
-                    <input type="checkbox" name="track-closed" id="input-track-closed">
-                    Circuit track
-                </label>
-            </span>
-
-            <span class="input-option">
-                <ul class="entry-list">
-                    <li class="entry-placeholder">No Path added yet</li>
-                    <li class="entry-item template">
-                        <p>::segment-name::</p>
+                <ul class="entry-list" id="path-list">
+                    <li class="entry-item template" id="path-template">
+                        <p>::path-name::</p>
                         <button type="button" class="btn-delete">
-                            <span>Delete Segment</span>
+                            <span>Delete Path</span>
                             <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="none"
                                 viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                 <path stroke-linecap="round" stroke-linejoin="round"
@@ -60,16 +59,16 @@
                             </svg>
                         </button>
                     </li>
+                    <li class="entry-placeholder" id="path-placeholder">No Path added yet</li>
                 </ul>
             </span>
 
             <span class="input-option">
-                <input type="button" value="Add Raster">
+                <input type="button" value="Add Raster" class="input-btn">
             </span>
 
             <span class="input-option">
                 <ul class="entry-list">
-                    <li class="entry-placeholder">No Raster added yet</li>
                     <li class="entry-item template">
                         <p>::raster-name::</p>
                         <button type="button" class="btn-delete">
@@ -81,16 +80,18 @@
                             </svg>
                         </button>
                     </li>
+                    <li class="entry-placeholder">No Raster added yet</li>
                 </ul>
             </span>
 
             <span class="input-option">
-                <input type="button" value="Create Track" onclick="console.log('submit')">
+                <input type="button" value="Create Track" class="input-btn" onclick="console.log('submit')">
             </span>
         </form>
     </main>
 
-    <script src="main.js"></script>
+    <script src="map.js"></script>
+    <script src="input.js"></script>
 </body>
 
 </html>

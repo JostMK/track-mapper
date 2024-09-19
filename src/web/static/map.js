@@ -9,46 +9,6 @@ L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
 }).addTo(map);
 
-map.on("click", addPosition);
-
-let positions = [];
-let routePolyLines = [];
-
-// TODO: investigate and fix distance bug in dijkstra
-async function temp(e){
-    let nodeLocation = await getNodeLocation(8371827);
-    L.marker(nodeLocation).addTo(map);
-    nodeLocation = await getNodeLocation(16743653);
-    L.marker(nodeLocation).addTo(map);
-
-    let path = await getShortestPath(8371827, 16743653)
-    routePolyLines.push(L.polyline(path, {color: "red"}).addTo(map));
-}
-
-async function addPosition(e) {
-    let latLng = clampPosition(e.latlng);
-    let nodeId = await getClosestNodeToPosition(latLng.lat, latLng.lng);
-    console.log("Node ID: " + nodeId)
-    let nodeLocation = await getNodeLocation(nodeId);
-    console.log("Location: ", nodeLocation)
-
-    if(nodeId === -1)
-        return;
-
-    positions.push(nodeId);
-    L.marker(nodeLocation).addTo(map);
-
-    if (positions.length > 1) {
-        let path = await getShortestPath(positions[positions.length - 2], positions[positions.length - 1])
-        console.log("Path: ",path)
-        if(path.length === 0){
-            positions.pop(); // remove last added position because it is invalid
-        }else{
-            routePolyLines.push(L.polyline(path, {color: "red"}).addTo(map));
-        }
-    }
-}
-
 async function getClosestNodeToPosition(latitude, longitude) {
     const res = await fetch("/api/get_node/" + latitude + "/" + longitude);
     const json = await res.json();
@@ -76,8 +36,8 @@ async function getShortestPath(startNodeId, targetNodeId) {
     return path;
 }
 
-
 function clampPosition(latLng) {
+    // map is clamped to bounds so no offset bigger can happen
     if (latLng.lng < -180)
         latLng.lng += 360;
 

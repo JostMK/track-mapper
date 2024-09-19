@@ -5,6 +5,8 @@
     --color-primary: rgb(137, 200, 255);
     --color-primary-muted: rgb(93, 151, 213);
     --color-muted: grey;
+    --color-pending: rgb(62, 228, 164);
+    --color-pending-muted: rgb(53, 168, 124);
 }
 
 /* --- Leaflet Map --- */
@@ -64,6 +66,13 @@
     display: none !important;
 }
 
+.inline-child-spaced {
+    display: flex;
+    flex-flow: row nowrap;
+    justify-content: space-between;
+    align-items: center;
+}
+
 /* --- Input Option Container --- */
 .input-option {
     background-color: white;
@@ -118,7 +127,7 @@
     width: 0.65em;
     height: 0.65em;
     transform: scale(0);
-    box-shadow: inset 1em 1em var(--color-primary);
+    box-shadow: inset 1em 1em var(--color-pending);
 
     -webkit-transition: 0.12 transform ease-in-out;
     -moz-transition: 0.12 transform ease-in-out;
@@ -132,7 +141,7 @@
 }
 
 /* --- Input Button Style --- */
-.input-option input[type="button"] {
+.input-btn {
     border-style: none;
     font-size: medium;
     padding: 8px 12px;
@@ -146,7 +155,7 @@
     border-radius: 4px;
 }
 
-.input-option input[type="button"]:hover {
+.input-btn:hover {
     -webkit-transform: scale(1.04);
     -moz-transform: scale(1.04);
     -ms-transform: scale(1.04);
@@ -154,13 +163,21 @@
     transform: scale(1.04);
 }
 
-.input-option input[type="button"]:active {
+.input-btn:active {
     background-color: var(--color-primary-muted);
     -webkit-transform: scale(0.96);
     -moz-transform: scale(0.96);
     -ms-transform: scale(0.96);
     -o-transform: scale(0.96);
     transform: scale(0.96);
+}
+
+.btn-pending {
+    background-color: var(--color-pending) !important;
+}
+
+.btn-pending:active {
+    background-color: var(--color-pending-muted) !important;
 }
 
 /* --- List for added Data --- */
