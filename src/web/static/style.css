@@ -1,11 +1,18 @@
 :root {
     --header-size: 50px;
+    --list-item-height: 30px;
+    --list-item-margin: 6px;
+    --color-primary: rgb(137, 200, 255);
+    --color-primary-muted: rgb(93, 151, 213);
+    --color-muted: grey;
 }
 
+/* --- Leaflet Map --- */
 #map {
     height: 100%;
 }
 
+/* --- Header Git Button --- */
 #git-button {
     height: 100%;
 
@@ -13,19 +20,227 @@
     text-decoration: none;
 
     display: flex;
-    flex-wrap: nowrap;
+    flex-flow: row nowrap;
     justify-content: flex-start;
     align-items: center;
     gap: 10px;
 }
-#git-button img{
+
+#git-button img {
     height: 60%;
 }
 
+/* --- Data Input Form Structure and Style --- */
+#input-form {
+    position: absolute;
+    top: var(--header-size);
+    right: 0;
+    z-index: 1000;
+
+    background-color: antiquewhite;
+    margin: 8px;
+    padding: 12px;
+
+    -webkit-border-radius: 4px;
+    -moz-border-radius: 4px;
+    -ms-border-radius: 4px;
+    -o-border-radius: 4px;
+    border-radius: 4px;
+
+    display: flex;
+    flex-flow: column nowrap;
+    justify-content: flex-start;
+    align-items: stretch;
+    gap: 8px;
+
+}
+
+/* --- Helper Classes --- */
 .spacer {
     flex-grow: 1;
 }
 
+.template {
+    display: none !important;
+}
+
+/* --- Input Option Container --- */
+.input-option {
+    background-color: white;
+    padding: 8px;
+    overflow: hidden;
+
+    -webkit-border-radius: 4px;
+    -moz-border-radius: 4px;
+    -ms-border-radius: 4px;
+    -o-border-radius: 4px;
+    border-radius: 4px;
+}
+
+/* --- Input Textfield Style --- */
+.input-option input[type="text"] {
+    font-size: medium;
+    padding: 8px 12px;
+    border-style: solid;
+    border-color: black;
+    transition: .3s;
+
+    -webkit-border-radius: 4px;
+    -moz-border-radius: 4px;
+    -ms-border-radius: 4px;
+    -o-border-radius: 4px;
+    border-radius: 4px;
+}
+
+/* --- Input Checkbox Style --- */
+/* copied from https://moderncss.dev/pure-css-custom-checkbox-style/ */
+.input-option .checkbox {
+    display: grid;
+    grid-template-columns: 1em auto;
+    gap: 0.5em;
+}
+
+.input-option input[type="checkbox"] {
+    display: grid;
+    place-content: center;
+    appearance: none;
+    background-color: white;
+    margin: 0;
+    font: inherit;
+    color: currentColor;
+    width: 1.15em;
+    height: 1.15em;
+    border: 0.15em solid currentColor;
+}
+
+.input-option input[type="checkbox"]::before {
+    content: "";
+    width: 0.65em;
+    height: 0.65em;
+    transform: scale(0);
+    box-shadow: inset 1em 1em var(--color-primary);
+
+    -webkit-transition: 0.12 transform ease-in-out;
+    -moz-transition: 0.12 transform ease-in-out;
+    -ms-transition: 0.12 transform ease-in-out;
+    -o-transition: 0.12 transform ease-in-out;
+    transition: 0.12 transform ease-in-out;
+}
+
+.input-option input[type="checkbox"]:checked::before {
+    transform: scale(1);
+}
+
+/* --- Input Button Style --- */
+.input-option input[type="button"] {
+    border-style: none;
+    font-size: medium;
+    padding: 8px 12px;
+    background-color: var(--color-primary);
+    transition: .3s;
+
+    -webkit-border-radius: 4px;
+    -moz-border-radius: 4px;
+    -ms-border-radius: 4px;
+    -o-border-radius: 4px;
+    border-radius: 4px;
+}
+
+.input-option input[type="button"]:hover {
+    -webkit-transform: scale(1.04);
+    -moz-transform: scale(1.04);
+    -ms-transform: scale(1.04);
+    -o-transform: scale(1.04);
+    transform: scale(1.04);
+}
+
+.input-option input[type="button"]:active {
+    background-color: var(--color-primary-muted);
+    -webkit-transform: scale(0.96);
+    -moz-transform: scale(0.96);
+    -ms-transform: scale(0.96);
+    -o-transform: scale(0.96);
+    transform: scale(0.96);
+}
+
+/* --- List for added Data --- */
+.entry-list {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+
+    height: auto;
+    max-height: calc(3 * (var(--list-item-height) + var(--list-item-margin)));
+}
+
+.entry-item+.entry-item {
+    margin-top: var(--list-item-margin);
+}
+
+.entry-item {
+    display: flex;
+    flex-flow: row nowrap;
+    justify-content: space-between;
+    align-items: center;
+    height: var(--list-item-height);
+    overflow: visible;
+
+    padding-left: 4px;
+    border-left-style: solid;
+    border-color: var(--color-primary);
+    -webkit-border-radius: 1px;
+    -moz-border-radius: 1px;
+    -ms-border-radius: 1px;
+    -o-border-radius: 1px;
+    border-radius: 1px;
+}
+
+.entry-placeholder {
+    color: var(--color-muted);
+    font-size: small;
+}
+
+/* --- Delete Button Style --- */
+/* modified from https://dev.to/designyff/delete-button-with-confirmation-a-step-by-step-guide-4ph8 */
+.btn-delete {
+    position: relative;
+    margin: 0;
+    padding: 0;
+
+    color: black;
+    border-style: none;
+    background-color: #fff;
+    cursor: pointer;
+    overflow: visible;
+    transition: .3s;
+}
+
+.btn-delete:hover {
+    color: black;
+    -webkit-transform: scale(1.1);
+    -moz-transform: scale(1.1);
+    -ms-transform: scale(1.1);
+    -o-transform: scale(1.1);
+    transform: scale(1.1);
+}
+
+.btn-delete:active {
+    color: rgb(231, 50, 50);
+    -webkit-transform: scale(0.9);
+    -moz-transform: scale(0.9);
+    -ms-transform: scale(0.9);
+    -o-transform: scale(0.9);
+    transform: scale(0.9);
+}
+
+.btn-delete span {
+    position: absolute;
+    display: none;
+}
+
+/* --- Basic Structure Setup --- */
 html,
 body {
     margin: 0;
@@ -47,7 +262,6 @@ header {
     align-items: center;
     gap: 10px;
 }
-
 
 main {
     height: calc(100% - var(--header-size));
