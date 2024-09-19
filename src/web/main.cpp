@@ -23,5 +23,5 @@ void TestWebApp() {
     std::cin>>filePath;
     const BasicGraph graph = FMIGraphReader::read(filePath);
 
-    TestWebApp::Start(graph);
+    TrackMapper::Web::TestWebApp::Start(graph);
 }

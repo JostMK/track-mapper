@@ -9,10 +9,6 @@
 #include <iostream>
 
 namespace TrackMapper::Raster {
-
-    OGRSpatialReference osmPointsProjRef(
-            R"(GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","4326"]])");
-
     PointGrid readRasterData(GDALDatasetWrapper &dataset) {
         // NOTE: to conform with the coordinate system of fbx files the z axis has to be inverted
 
@@ -39,6 +35,25 @@ namespace TrackMapper::Raster {
 
         return grid;
     }
+    std::vector<OSMPoint> getDatasetExtends(const GDALDatasetWrapper &dataset) {
+        // NOTE: this function does NOT conform with the inverted z coordinate system of fbx scenes
+
+        // see: https://gdal.org/en/latest/tutorials/geotransforms_tut.html [2024-09-11]
+        const GeoTransform &transform = dataset.GetGeoTransform();
+        const int sizeX = dataset.GetSizeX();
+        const int sizeY = dataset.GetSizeY();
+
+        std::vector<OSMPoint> extends;
+        extends.emplace_back(transform[0] + transform[1] * 0 + 0 * transform[2],
+                             transform[3] + transform[4] * 0 + 0 * transform[5]); // (0,0)
+        extends.emplace_back(transform[0] + transform[1] * sizeX + 0 * transform[2],
+                             transform[3] + transform[4] * sizeX + 0 * transform[5]); // (sizeX,0)
+        extends.emplace_back(transform[0] + transform[1] * 0 + sizeY * transform[2],
+                             transform[3] + transform[4] * 0 + sizeY * transform[5]); // (0,sizeY)
+        extends.emplace_back(transform[0] + transform[1] * sizeX + sizeY * transform[2],
+                             transform[3] + transform[4] * sizeX + sizeY * transform[5]); // (sizeX,sizeY)
+        return extends;
+    }
 
     bool reprojectOSMPoints(std::vector<OSMPoint> &points, OGRSpatialReference &dstProjRef) {
         if (dstProjRef.Validate() != OGRERR_NONE)
@@ -52,6 +67,20 @@ namespace TrackMapper::Raster {
 
             // Note: to conform with the coordinate system of fbx files the z axis has to be inverted
             lng *= -1;
+        }
+
+        return true;
+    }
+    bool reprojectPoints(std::vector<OSMPoint> &points, OGRSpatialReference &srcProjRef,
+                         OGRSpatialReference &dstProjRef) {
+        if (dstProjRef.Validate() != OGRERR_NONE)
+            return false;
+
+        const GDALReprojectionTransformer transformer(srcProjRef, dstProjRef);
+
+        for (auto &[lat, lng]: points) {
+            if (const bool success = transformer.Transform(&lat, &lng, nullptr); !success)
+                return false;
         }
 
         return true;

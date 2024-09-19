@@ -12,6 +12,9 @@
 
 namespace TrackMapper::Raster {
 
+    inline OGRSpatialReference osmPointsProjRef(
+            R"(GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","4326"]])");
+
     struct OSMPoint {
         double lat, lng;
     };
@@ -42,7 +45,11 @@ namespace TrackMapper::Raster {
 
     PointGrid readRasterData(GDALDatasetWrapper &dataset);
 
+    std::vector<OSMPoint> getDatasetExtends(const GDALDatasetWrapper &dataset);
+
     bool reprojectOSMPoints(std::vector<OSMPoint> &points, OGRSpatialReference &dstProjRef);
+
+    bool reprojectPoints(std::vector<OSMPoint> &points, OGRSpatialReference &srcProjRef, OGRSpatialReference &dstProjRef);
 
     void interpolateHeightInGrid(const PointGrid &grid, Point &point);
 

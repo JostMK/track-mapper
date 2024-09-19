@@ -6,12 +6,11 @@
 #define TESTWEBAPP_H
 #include "../graph/BasicGraph.h"
 
+namespace TrackMapper::Web {
+    class TestWebApp {
+    public:
+        static void Start(const BasicGraph &graph);
+    };
+} // namespace TrackMapper::Web
 
-class TestWebApp {
-public:
-    static void Start(const BasicGraph& graph);
-};
-
-
-
-#endif //TESTWEBAPP_H
+#endif // TESTWEBAPP_H

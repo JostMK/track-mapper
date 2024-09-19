@@ -36,6 +36,23 @@ async function getShortestPath(startNodeId, targetNodeId) {
     return path;
 }
 
+async function getRasterExtend(rasterFilePath) {
+    const res = await fetch("/api/get_raster_extend/" + btoa(rasterFilePath.replaceAll('\\', '/')));
+    const json = await res.json();
+    const rect = [];
+
+    if(json["error"] != undefined){
+        console.error(json["error"])
+        return null;
+    }
+
+    json["corners"].forEach((node) => {
+        rect.push(L.latLng(node["lat"], node["lon"]));
+    });
+
+    return rect;
+}
+
 function clampPosition(latLng) {
     // map is clamped to bounds so no offset bigger can happen
     if (latLng.lng < -180)

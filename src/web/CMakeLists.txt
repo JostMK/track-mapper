@@ -9,7 +9,7 @@ add_library(TrackMapperServerLib STATIC
         TestWebApp.cpp
         TestWebApp.h
 )
-target_link_libraries(TrackMapperServerLib PRIVATE TrackMapperGraphLib Crow::Crow asio::asio)
+target_link_libraries(TrackMapperServerLib PRIVATE TrackMapperGraphLib TrackMapperMeshLib Crow::Crow asio::asio)
 
 if(WIN32)
     # see https://github.com/CrowCpp/Crow/issues/759
