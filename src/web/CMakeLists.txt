@@ -9,13 +9,14 @@ find_package(PROJ 9.4 REQUIRED CONFIG) # needed for copying proj folder needed f
 add_library(TrackMapperServerLib STATIC
         TestWebApp.cpp
         TestWebApp.h
+        error_codes.h
 )
 target_link_libraries(TrackMapperServerLib PRIVATE TrackMapperGraphLib TrackMapperMeshLib Crow::Crow asio::asio)
 
-if(WIN32)
+if (WIN32)
     # see https://github.com/CrowCpp/Crow/issues/759
     target_link_libraries(TrackMapperServerLib INTERFACE ws2_32 wsock32)
-endif()
+endif ()
 
 # copies static web files post build needed right next to TrackMapperServerLib - dirty hack
 add_custom_command(TARGET TrackMapperServerLib POST_BUILD

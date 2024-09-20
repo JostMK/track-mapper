@@ -27,6 +27,8 @@ namespace TrackMapper::Raster {
         explicit GDALDatasetWrapper(const std::string &filepath);
         ~GDALDatasetWrapper();
 
+        [[nodiscard]] bool isValid() const;
+
         /**
          * @return GeoTransform containing tranformation information of the dataset
          * @see [Introduction to Geotransforms](https://gdal.org/tutorials/geotransforms_tut.html#geotransform-tutorial)
@@ -50,6 +52,8 @@ namespace TrackMapper::Raster {
         // opaque pointer to avoid including gdal headers
         struct impl;
         std::unique_ptr<impl> pImpl;
+
+        bool invalid;
 
         GeoTransform mTransform;
         OGRSpatialReference mProjRef;

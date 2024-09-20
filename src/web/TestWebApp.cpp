@@ -9,6 +9,8 @@
 #include "../mesh/raster_reader.h"
 #include "crow.h"
 
+#include "error_codes.h"
+
 namespace TrackMapper::Web {
 
     std::string base64_decode(const std::string &in);
@@ -77,12 +79,24 @@ namespace TrackMapper::Web {
         ([](const std::string &rasterFilePathBase64) {
             std::string rasterFilePath = base64_decode(rasterFilePathBase64);
             const Raster::GDALDatasetWrapper dataset(rasterFilePath);
-            auto extends = Raster::getDatasetExtends(dataset);
 
-            OGRSpatialReference srcPrjRef(dataset.GetProjectionRef().exportToWkt().c_str());
-            if (auto success = Raster::reprojectPoints(extends, srcPrjRef, Raster::osmPointsProjRef); !success) {
+            if (!dataset.isValid()) {
                 crow::json::wvalue x;
-                x["error"] = "Failed to project points to WGS84";
+                x["error"] = ERROR_INVALID_FILE + " Failed to open file: " + rasterFilePath;
+                return x;
+            }
+
+            OGRSpatialReference srcProjRef(dataset.GetProjectionRef().exportToWkt().c_str());
+            if (srcProjRef.Validate() != OGRERR_NONE) {
+                crow::json::wvalue x;
+                x["error"] = ERROR_MISSING_PROJ + " File misses projection reference, please manually specify it!";
+                return x;
+            }
+
+            auto extends = Raster::getDatasetExtends(dataset);
+            if (auto success = Raster::reprojectPoints(extends, srcProjRef, Raster::osmPointsProjRef); !success) {
+                crow::json::wvalue x;
+                x["error"] = ERROR_FAILED_PROJ + " Failed to project points to WGS84!";
                 return x;
             }
 

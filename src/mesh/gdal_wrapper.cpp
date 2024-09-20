@@ -21,8 +21,13 @@ namespace TrackMapper::Raster {
         CPLSetConfigOption("PROJ_LIB", "./proj");
         GDALAllRegister();
 
-        // TODO: handle error with invalid filepath
         auto pDataset = GDALDatasetUniquePtr(GDALDataset::FromHandle(GDALOpen(filepath.c_str(), GA_ReadOnly)));
+
+        if (!pDataset) {
+            invalid = true;
+            return;
+        }
+        invalid = false;
 
         pDataset->GetGeoTransform(mTransform.data());
         mProjRef = OGRSpatialReference(pDataset->GetProjectionRef());
@@ -34,16 +39,31 @@ namespace TrackMapper::Raster {
 
     GDALDatasetWrapper::~GDALDatasetWrapper() {
         // TODO: handle possible errors
-        pImpl->pDataset->Close();
+        if (!invalid)
+            pImpl->pDataset->Close();
     }
+    bool GDALDatasetWrapper::isValid() const { return !invalid; }
 
     const GeoTransform &GDALDatasetWrapper::GetGeoTransform() const { return mTransform; }
 
-    int GDALDatasetWrapper::GetSizeX() const { return pImpl->pDataset->GetRasterBand(1)->GetXSize(); }
+    int GDALDatasetWrapper::GetSizeX() const {
+        if (invalid)
+            return 0;
 
-    int GDALDatasetWrapper::GetSizeY() const { return pImpl->pDataset->GetRasterBand(1)->GetYSize(); }
+        return pImpl->pDataset->GetRasterBand(1)->GetXSize();
+    }
+
+    int GDALDatasetWrapper::GetSizeY() const {
+        if (invalid)
+            return 0;
+
+        return pImpl->pDataset->GetRasterBand(1)->GetYSize();
+    }
 
     const std::vector<float> &GDALDatasetWrapper::GetData() {
+        if (invalid)
+            return mData; // will be empty
+
         if (!mData.empty())
             return mData;
 
