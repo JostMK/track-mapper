@@ -21,6 +21,7 @@ const rasterEntryList = document.getElementById('raster-list');
 const rasterEntryPlaceholder = document.getElementById('raster-placeholder');
 const rasterEntryTemplate = document.getElementById('raster-template');
 const rasterAddBtn = document.getElementById('raster-add-btn');
+const rasterCustomProjRef = document.getElementById('input-proj-ref');
 const rasterPopupForm = document.getElementById('popup-raster-form');
 const rasterPopupFilepath = document.getElementById('popup-raster-path');
 rasterPopupForm.classList.add('hide');
@@ -181,17 +182,26 @@ async function addRaster() {
     closeRasterPopup();
 
     // replace '\' with '/' for base64 encoding
-    const filePath = rasterPopupFilepath.value.replaceAll('\\', '/'); 
+    const filePath = rasterPopupFilepath.value.replaceAll('\\', '/');
+    const req = {
+        filePath: filePath
+    };
+
+    // check if custom proj ref is provided
+    const projRef = rasterCustomProjRef.value.trim();
+    if (projRef !== "") {
+        req["projRef"] = projRef;
+    }
 
     // gets extend of raster and draws it on the map
-    const extend = await getRasterExtend(filePath);
+    const extend = await getRasterExtend(JSON.stringify(req));
     if (extend instanceof String || typeof extend === 'string') {
         alert("Error while trying to open raster:\n" + extend);
         return;
     }
 
-     // if this is the first added path in the list hide the placeholder text
-     if (Object.keys(rasters).length <= 0)
+    // if this is the first added path in the list hide the placeholder text
+    if (Object.keys(rasters).length <= 0)
         rasterEntryPlaceholder.style.display = "none";
 
     const poly = L.polyline([extend[0], extend[1], extend[3], extend[2], extend[0]], { color: "green" });
@@ -203,7 +213,7 @@ async function addRaster() {
         polyline: poly
     };
 
-     // add raster to the rasters dictionary using the strictly increasing rasterCounter as key
+    // add raster to the rasters dictionary using the strictly increasing rasterCounter as key
     const rasterIndex = rasterCounter++;
     rasters[rasterIndex] = newRaster;
 

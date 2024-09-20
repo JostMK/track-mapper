@@ -73,11 +73,13 @@ namespace TrackMapper::Web {
         });
 
         // get extends rect of a raster
-        // REQ: base64 encoded file path to a raster file
+        // REQ: base64 encoded json obj containing filepath to raster and optionally custom proj ref
         // RES: 4 points representing the corners of the raster rect
         CROW_ROUTE(app, "/api/get_raster_extend/<string>")
-        ([](const std::string &rasterFilePathBase64) {
-            std::string rasterFilePath = base64_decode(rasterFilePathBase64);
+        ([](const std::string &base64JsonObj) {
+            auto rasterJson = crow::json::load(base64_decode(base64JsonObj));
+
+            std::string rasterFilePath = rasterJson["filePath"].s();
             const Raster::GDALDatasetWrapper dataset(rasterFilePath);
 
             if (!dataset.isValid()) {
@@ -88,9 +90,24 @@ namespace TrackMapper::Web {
 
             OGRSpatialReference srcProjRef(dataset.GetProjectionRef().exportToWkt().c_str());
             if (srcProjRef.Validate() != OGRERR_NONE) {
-                crow::json::wvalue x;
-                x["error"] = ERROR_MISSING_PROJ + " File misses projection reference, please manually specify it!";
-                return x;
+                // check if custom proj ref was provided
+                if (!rasterJson.has("projRef")) {
+                    crow::json::wvalue x;
+                    x["error"] = ERROR_MISSING_PROJ + " File misses projection reference, please manually specify it!";
+                    return x;
+                }
+
+                // get custom proj ref
+                std::string customProjRef = rasterJson["projRef"].s();
+                srcProjRef = OGRSpatialReference(customProjRef.c_str());
+                // validate custom proj ref
+                if (srcProjRef.Validate() != OGRERR_NONE) {
+                    crow::json::wvalue x;
+                    x["error"] = ERROR_INVALID_PROJ +
+                                 " Provided projection reference does not discribe a valide projection:\n\n" +
+                                 customProjRef;
+                    return x;
+                }
             }
 
             auto extends = Raster::getDatasetExtends(dataset);

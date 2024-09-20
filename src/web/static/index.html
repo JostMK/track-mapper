@@ -38,7 +38,7 @@
             </span>
 
             <span class="input-option">
-                <div class="inline-child-spaced">
+                <div class="inline-children-spaced">
                     <input type="button" value="Add Path" class="input-btn" id="path-add-btn">
 
                     <label class="checkbox hide" id="path-closed-checkbox">
@@ -89,13 +89,23 @@
             <span class="input-option">
                 <input type="button" value="Create Track" class="input-btn" onclick="console.log('submit')">
             </span>
+
+            <h3 class="subheader">Optional:</h3>
+            <span class="input-option">
+                <div class="stack-children">
+                    <label for="input-proj-ref">Projection:</label>
+                    <textarea name="proj-ref-txt" id="input-proj-ref" rows="3" cols="48"
+                        placeholder="Enter OGC WKT (can be obtained from e.g. https://epsg.io)"></textarea>
+                </div>
+            </span>
         </form>
     </main>
 
     <form id="popup-raster-form" class="popup form hide" onSubmit="return false;">
         <span class="input-option">
             <label for="popup-raster-path" hidden>Raster Path:</label>
-            <input type="text" name="raster-path" id="popup-raster-path" placeholder="Full Path to Raster File" size="96">
+            <input type="text" name="raster-path" id="popup-raster-path" placeholder="Full Path to Raster File"
+                size="96">
         </span>
         <span class="input-option">
             <input type="button" value="Add Raster" class="input-btn btn-pending" onclick="addRaster()">
