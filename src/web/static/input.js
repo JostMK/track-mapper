@@ -1,9 +1,11 @@
+// -- Adding Paths Variables --
 const pathEntryList = document.getElementById('path-list');
 const pathEntryPlaceholder = document.getElementById('path-placeholder');
 const pathEntryTemplate = document.getElementById('path-template');
+const pathAddBtn = document.getElementById('path-add-btn');
 const pathClosedCheckbox = document.getElementById('input-track-closed');
 const pathClosedVisual = document.getElementById('path-closed-checkbox');
-pathClosedVisual.style.visibility = 'hidden';
+pathClosedVisual.classList.add('hide');
 pathClosedCheckbox.addEventListener('change', onClosedToggles)
 
 const CLICK_MODE_NONE = 'click-none';
@@ -14,6 +16,19 @@ let curPath; // temporarily hold all the data while path is created by user
 let paths = {}; // stores all paths for giving to the server later
 let pathCounter = 0; // strictly increasing index / id for created paths
 
+// -- Adding Rasters Variables --
+const rasterEntryList = document.getElementById('raster-list');
+const rasterEntryPlaceholder = document.getElementById('raster-placeholder');
+const rasterEntryTemplate = document.getElementById('raster-template');
+const rasterAddBtn = document.getElementById('raster-add-btn');
+const rasterPopupForm = document.getElementById('popup-raster-form');
+const rasterPopupFilepath = document.getElementById('popup-raster-path');
+rasterPopupForm.classList.add('hide');
+
+let rasters = {}; // stores all raster paths for giving to the server later
+let rasterCounter = 0; // strictly increasing index / id for created rasters
+
+// -- Adding Paths Functionality --
 map.on("click", onMapClick);
 
 async function onMapClick(click) {
@@ -34,8 +49,7 @@ function onClosedToggles(_) {
     }
 }
 
-const pathPathAddBtn = document.getElementById('path-add-btn');
-pathPathAddBtn.addEventListener("click", () => {
+pathAddBtn.addEventListener("click", () => {
     if (clickMode === CLICK_MODE_NONE) startAddingPath();
     else finishAddingPath();
 });
@@ -50,21 +64,21 @@ function startAddingPath() {
         isClosed: false
     };
 
-    pathPathAddBtn.value = "Finish";
-    pathPathAddBtn.classList.add('btn-pending');
+    pathAddBtn.value = "Finish";
+    pathAddBtn.classList.add('btn-pending');
 
     pathClosedCheckbox.checked = false;
-    pathClosedVisual.style.visibility = 'visible';
+    pathClosedVisual.classList.remove('hide');
 }
 
 async function finishAddingPath() {
     clickMode = CLICK_MODE_NONE;
 
     // handle visuals
-    pathPathAddBtn.value = "Add Path";
-    pathPathAddBtn.classList.remove('btn-pending');
+    pathAddBtn.value = "Add Path";
+    pathAddBtn.classList.remove('btn-pending');
 
-    pathClosedVisual.style.visibility = 'hidden';
+    pathClosedVisual.classList.add('hide');
 
     // always delete all markers from the map
     curPath.markers.forEach(m => { map.removeLayer(m); });
@@ -149,4 +163,68 @@ async function addSegment(click) {
         map.addLayer(poly);
         curPath.segments.push(poly);
     }
+}
+
+// -- Adding Rasters Functionality --
+rasterAddBtn.addEventListener("click", openRasterPopup);
+
+function openRasterPopup() {
+    rasterPopupForm.classList.remove('hide');
+    rasterPopupFilepath.value = "";
+}
+
+function closeRasterPopup() {
+    rasterPopupForm.classList.add('hide');
+}
+
+async function addRaster() {
+    closeRasterPopup();
+
+    // replace '\' with '/' for base64 encoding
+    const filePath = rasterPopupFilepath.value.replaceAll('\\', '/'); 
+
+    // gets extend of raster and draws it on the map
+    const extend = await getRasterExtend(filePath);
+    if (extend instanceof String || typeof extend === 'string') {
+        alert("Error while trying to open raster:\n" + extend);
+        return;
+    }
+
+     // if this is the first added path in the list hide the placeholder text
+     if (Object.keys(rasters).length <= 0)
+        rasterEntryPlaceholder.style.display = "none";
+
+    const poly = L.polyline([extend[0], extend[1], extend[3], extend[2], extend[0]], { color: "green" });
+    map.addLayer(poly);
+
+    // creates new raster object
+    const newRaster = {
+        filePath: filePath,
+        polyline: poly
+    };
+
+     // add raster to the rasters dictionary using the strictly increasing rasterCounter as key
+    const rasterIndex = rasterCounter++;
+    rasters[rasterIndex] = newRaster;
+
+    // clone raster entry template and set it up
+    const rasterEntry = rasterEntryTemplate.cloneNode(true);
+    rasterEntry.innerHTML = rasterEntry.innerHTML.replaceAll("::raster-name::", "Raster " + rasterIndex);
+    rasterEntry.classList.remove("template");
+    rasterEntry.id = "raster-" + rasterIndex;
+
+    // setup delete button of raster entry
+    const deleteBtn = rasterEntry.querySelector(".btn-delete");
+    deleteBtn.addEventListener("click", () => {
+        const raster = rasters[rasterIndex];
+        map.removeLayer(raster.polyline);
+        document.getElementById("raster-" + rasterIndex).remove();
+
+        delete rasters[rasterIndex];
+        if (Object.keys(rasters).length === 0) // if no more rasters are left reshow the placeholder text
+            rasterEntryPlaceholder.style.display = "list-item";
+    });
+
+    rasterEntryList.appendChild(rasterEntry);
+
 }

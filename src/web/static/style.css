@@ -7,6 +7,7 @@
     --color-muted: grey;
     --color-pending: rgb(62, 228, 164);
     --color-pending-muted: rgb(53, 168, 124);
+    --color-cancel: rgb(231, 50, 50);
 }
 
 /* --- Leaflet Map --- */
@@ -38,7 +39,9 @@
     top: var(--header-size);
     right: 0;
     z-index: 1000;
+}
 
+.form {
     background-color: antiquewhite;
     margin: 8px;
     padding: 12px;
@@ -71,6 +74,19 @@
     flex-flow: row nowrap;
     justify-content: space-between;
     align-items: center;
+}
+
+.popup {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    z-index: 10000;
+    translate: -50% -50%;
+}
+
+.hide {
+    visibility: hidden !important;
+    z-index: -1 !important;
 }
 
 /* --- Input Option Container --- */
@@ -244,7 +260,7 @@
 }
 
 .btn-delete:active {
-    color: rgb(231, 50, 50);
+    color: var(--color-cancel);
     -webkit-transform: scale(0.9);
     -moz-transform: scale(0.9);
     -ms-transform: scale(0.9);

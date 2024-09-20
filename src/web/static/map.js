@@ -37,13 +37,13 @@ async function getShortestPath(startNodeId, targetNodeId) {
 }
 
 async function getRasterExtend(rasterFilePath) {
-    const res = await fetch("/api/get_raster_extend/" + btoa(rasterFilePath.replaceAll('\\', '/')));
+    const res = await fetch("/api/get_raster_extend/" + btoa(rasterFilePath));
     const json = await res.json();
     const rect = [];
 
     if(json["error"] != undefined){
         console.error(json["error"])
-        return null;
+        return json["error"];
     }
 
     json["corners"].forEach((node) => {

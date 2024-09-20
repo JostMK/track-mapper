@@ -29,7 +29,7 @@
     <main>
         <div id="map"></div>
 
-        <form id="input-form">
+        <form id="input-form" class="form" onSubmit="return false;">
             <span class="input-option">
                 <label for="input-track-name">Track Name:</label>
                 <input type="text" name="track-name" id="input-track-name" placeholder="Test Track">
@@ -39,7 +39,7 @@
                 <div class="inline-child-spaced">
                     <input type="button" value="Add Path" class="input-btn" id="path-add-btn">
 
-                    <label class="checkbox" id="path-closed-checkbox">
+                    <label class="checkbox hide" id="path-closed-checkbox">
                         <input type="checkbox" name="track-closed" id="input-track-closed">
                         Close loop
                     </label>
@@ -64,12 +64,12 @@
             </span>
 
             <span class="input-option">
-                <input type="button" value="Add Raster" class="input-btn">
+                <input type="button" value="Add Raster" class="input-btn" id="raster-add-btn">
             </span>
 
             <span class="input-option">
-                <ul class="entry-list">
-                    <li class="entry-item template">
+                <ul class="entry-list" id="raster-list">
+                    <li class="entry-item template" id="raster-template">
                         <p>::raster-name::</p>
                         <button type="button" class="btn-delete">
                             <span>Delete Raster</span>
@@ -80,7 +80,7 @@
                             </svg>
                         </button>
                     </li>
-                    <li class="entry-placeholder">No Raster added yet</li>
+                    <li class="entry-placeholder" id="raster-placeholder">No Raster added yet</li>
                 </ul>
             </span>
 
@@ -89,6 +89,17 @@
             </span>
         </form>
     </main>
+
+    <form id="popup-raster-form" class="popup form hide" onSubmit="return false;">
+        <span class="input-option">
+            <label for="popup-raster-path" hidden>Raster Path:</label>
+            <input type="text" name="raster-path" id="popup-raster-path" placeholder="Full Path to Raster File" size="96">
+        </span>
+        <span class="input-option">
+            <input type="button" value="Add Raster" class="input-btn btn-pending" onclick="addRaster()">
+            <input type="button" value="Cancel" class="input-btn" onclick="closeRasterPopup()">
+        </span>
+    </form>
 
     <script src="map.js"></script>
     <script src="input.js"></script>
