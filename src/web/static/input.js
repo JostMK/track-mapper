@@ -29,6 +29,11 @@ rasterPopupForm.classList.add('hide');
 let rasters = {}; // stores all raster paths for giving to the server later
 let rasterCounter = 0; // strictly increasing index / id for created rasters
 
+// -- Creating Track Variables --
+const progressText = document.getElementById('progress-text');
+const progressPopup = document.getElementById('progress-popup');
+progressPopup.classList.add('hide');
+
 // -- Adding Paths Functionality --
 map.on("click", onMapClick);
 
@@ -237,4 +242,10 @@ async function addRaster() {
 
     rasterEntryList.appendChild(rasterEntry);
 
+}
+
+// -- Adding Track Creation --
+function startTrackCreation(){
+    progressText.innerText = "Submitting Track Data";
+    progressPopup.classList.remove('hide');
 }

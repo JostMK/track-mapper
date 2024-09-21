@@ -104,7 +104,7 @@ namespace TrackMapper::Web {
                 if (srcProjRef.Validate() != OGRERR_NONE) {
                     crow::json::wvalue x;
                     x["error"] = ERROR_INVALID_PROJ +
-                                 " Provided projection reference does not discribe a valide projection:\n\n" +
+                                 " Provided projection reference does not discribe a valid projection:\n\n" +
                                  customProjRef;
                     return x;
                 }

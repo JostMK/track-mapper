@@ -87,7 +87,7 @@
             </span>
 
             <span class="input-option">
-                <input type="button" value="Create Track" class="input-btn" onclick="console.log('submit')">
+                <input type="button" value="Create Track" class="input-btn" onclick="startTrackCreation()">
             </span>
 
             <h3 class="subheader">Optional:</h3>
@@ -112,6 +112,17 @@
             <input type="button" value="Cancel" class="input-btn" onclick="closeRasterPopup()">
         </span>
     </form>
+
+    <div class="hide" id="progress-popup">
+        <div class="screen-blocker"></div>
+        <div class="popup progress-panel">
+            <h3 class="subheader">Creating Track:</h3>
+            <span class="inline-children-spaced">
+                <span class="loader"></span>
+                <p class="progress-text" id="progress-text">Task 0/0: Task Description</p>
+            </span>
+        </div>
+    </div>
 
     <script src="map.js"></script>
     <script src="input.js"></script>
