@@ -2,22 +2,27 @@
 // Created by Jost on 02/05/2024.
 //
 
-#include "TestWebApp.h"
+#include "BasicWebApp.h"
 #include "../graph/DijkstraPathfinding.h"
+#include "../graph/FMIGraphReader.h"
 #include "../graph/SimpleWorldGrid.h"
 #include "../mesh/gdal_wrapper.h"
 #include "../mesh/raster_reader.h"
 #include "crow.h"
 
-#include "error_codes.h"
+#include "strings_config.h"
 
 namespace TrackMapper::Web {
 
     std::string base64_decode(const std::string &in);
 
-    void TestWebApp::Start(const BasicGraph &graph) {
-        const DijkstraPathfinding pathfinding(graph);
-        const SimpleWorldGrid grid(graph, 0.01);
+    BasicWebApp::BasicWebApp(const std::string &filePath) try : mGraph{FMIGraphReader::read(filePath)} {
+    } catch (...) {
+    }
+
+    void BasicWebApp::Start() {
+        const DijkstraPathfinding pathfinding(mGraph);
+        const SimpleWorldGrid grid(mGraph, 0.01);
 
         crow::SimpleApp app;
         // app.loglevel(crow::LogLevel::Debug);
@@ -38,8 +43,8 @@ namespace TrackMapper::Web {
         // REQ: latitude and longitude as double/double
         // RES: node id as json string
         CROW_ROUTE(app, "/api/get_location/<int>")
-        ([&graph](const int node_id) {
-            auto [latitude, longitude] = graph.GetLocation(node_id);
+        ([&mGraph = this->mGraph](const int node_id) {
+            auto [latitude, longitude] = mGraph.GetLocation(node_id);
 
             crow::json::wvalue x;
             x["lat"] = latitude;
@@ -51,13 +56,13 @@ namespace TrackMapper::Web {
         // REQ: start and target node id as int/int
         // RES: shortest path as json string
         CROW_ROUTE(app, "/api/get_path/<int>/<int>")
-        ([&pathfinding, &graph](const int startNodeIndex, const int targetNodeIndex) {
+        ([&pathfinding, &mGraph = this->mGraph](const int startNodeIndex, const int targetNodeIndex) {
             auto [nodeIds, distance] = pathfinding.CalculatePath(startNodeIndex, targetNodeIndex);
 
             std::vector<crow::json::wvalue> path;
             path.reserve(nodeIds.size());
             for (const auto nodeId: nodeIds) {
-                auto [latitude, longitude] = graph.GetLocation(nodeId);
+                auto [latitude, longitude] = mGraph.GetLocation(nodeId);
                 crow::json::wvalue node;
                 node["nodeId"] = nodeId;
                 node["lat"] = latitude;
@@ -131,6 +136,26 @@ namespace TrackMapper::Web {
             return x;
         });
 
+        // starts track creation
+        // REQ: base64 encoded json obj containing data for track creation
+        // RES: error msg if error happens
+        CROW_ROUTE(app, "/api/create_track/<string>")
+        ([](const std::string &base64JsonObj) {
+            auto trackJson = crow::json::load(base64_decode(base64JsonObj));
+
+            crow::json::wvalue x;
+            return x;
+        });
+
+        // gets progress msg of track creation progress
+        // RES: string containing progress msg
+        CROW_ROUTE(app, "/api/get_progress")
+        ([&progressText = this->mProgressText]() {
+            crow::json::wvalue x;
+            x["progress"] = progressText;
+            return x;
+        });
+
         app.port(18080).run();
     }
 
@@ -155,4 +180,5 @@ namespace TrackMapper::Web {
         }
         return out;
     }
+
 } // namespace TrackMapper::Web

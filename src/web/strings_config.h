@@ -12,4 +12,6 @@ const std::string ERROR_MISSING_PROJ = "[ERROR_R1]";
 const std::string ERROR_FAILED_PROJ = "[ERROR_R2]";
 const std::string ERROR_INVALID_PROJ = "[ERROR_R3]";
 
+const std::string TASK_FOO = "Task 1/1: foo";
+
 #endif // ERROR_CODES_H

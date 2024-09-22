@@ -12,13 +12,13 @@ static Location parseNode(const std::string &line);
 
 static std::pair<int, Edge> parseEdge(const std::string &line);
 
-BasicGraph FMIGraphReader::read(std::string &filePath) {
+BasicGraph FMIGraphReader::read(const std::string &filePath) {
     // Implementation follows: https://github.com/fmi-alg/OsmGraphCreator/blob/master/readers/fmitextreader.cpp
     // Details from FmiTextGraphWriter in: https://github.com/fmi-alg/OsmGraphCreator/blob/master/creator/GraphWriter.cpp
     std::ifstream fileReadStream;
     fileReadStream.open(filePath);
     if (!fileReadStream.is_open()) {
-        throw std::runtime_error("Could not open file");
+        throw std::runtime_error("Could not open file: " + filePath);
     }
 
     // header section - metadata followed by an empty line

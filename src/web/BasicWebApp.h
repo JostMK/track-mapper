@@ -4,12 +4,19 @@
 
 #ifndef TESTWEBAPP_H
 #define TESTWEBAPP_H
+
+#include <string>
 #include "../graph/BasicGraph.h"
 
 namespace TrackMapper::Web {
-    class TestWebApp {
+    class BasicWebApp {
     public:
-        static void Start(const BasicGraph &graph);
+        explicit BasicWebApp(const std::string &filePath);
+        void Start();
+
+    private:
+        BasicGraph mGraph;
+        std::string mProgressText;
     };
 } // namespace TrackMapper::Web
 

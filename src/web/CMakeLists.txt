@@ -7,9 +7,9 @@ find_package(Crow CONFIG REQUIRED)
 find_package(PROJ 9.4 REQUIRED CONFIG) # needed for copying proj folder needed for TrackMapperMeshLib - dirty hack
 
 add_library(TrackMapperServerLib STATIC
-        TestWebApp.cpp
-        TestWebApp.h
-        error_codes.h
+        BasicWebApp.cpp
+        BasicWebApp.h
+        strings_config.h
 )
 target_link_libraries(TrackMapperServerLib PRIVATE TrackMapperGraphLib TrackMapperMeshLib Crow::Crow asio::asio)
 
@@ -38,4 +38,4 @@ add_custom_command(TARGET TrackMapperServerLib POST_BUILD
 add_executable(TrackMapperServerWebApp
         main.cpp
 )
-target_link_libraries(TrackMapperServerWebApp PRIVATE TrackMapperServerLib TrackMapperGraphLib)
+target_link_libraries(TrackMapperServerWebApp PRIVATE TrackMapperServerLib)

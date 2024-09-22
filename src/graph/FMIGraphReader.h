@@ -10,7 +10,7 @@
 
 class FMIGraphReader {
 public:
-    static BasicGraph read(std::string &filePath);
+    static BasicGraph read(const std::string &filePath);
 };
 
 

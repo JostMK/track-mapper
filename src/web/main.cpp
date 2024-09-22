@@ -3,15 +3,11 @@
 //
 
 #include <iostream>
-
-#include "TestWebApp.h"
-#include "../graph/FMIGraphreader.h"
-#include "../graph/BasicGraph.h"
+#include "BasicWebApp.h"
 
 void TestWebApp();
 
-int main()
-{
+int main() {
     TestWebApp();
     return 0;
 }
@@ -20,8 +16,14 @@ void TestWebApp() {
     std::cout << "Enter Path to fmi file:" << std::endl;
 
     std::string filePath;
-    std::cin>>filePath;
-    const BasicGraph graph = FMIGraphReader::read(filePath);
+    std::cin >> filePath;
 
-    TrackMapper::Web::TestWebApp::Start(graph);
+    try {
+        TrackMapper::Web::BasicWebApp app(filePath);
+        app.Start();
+    } catch (const std::exception &e) {
+        std::cout << e.what() << std::endl;
+    } catch (...) {
+        std::cout << "An unknown error happend :(" << std::endl;
+    }
 }
