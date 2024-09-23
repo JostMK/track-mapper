@@ -6,17 +6,20 @@
 #define TESTWEBAPP_H
 
 #include <string>
+#include "crow.h"
+
 #include "../graph/BasicGraph.h"
+#include "TrackData.h"
 
 namespace TrackMapper::Web {
     class BasicWebApp {
     public:
         explicit BasicWebApp(const std::string &filePath);
-        void Start();
+        void Start(TrackData &trackData);
 
     private:
         BasicGraph mGraph;
-        std::string mProgressText;
+        crow::SimpleApp app{};
     };
 } // namespace TrackMapper::Web
 

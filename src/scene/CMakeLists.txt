@@ -18,6 +18,8 @@ endif ()
 add_library(TrackMapperSceneLib STATIC
         TrackScene.h
         TrackScene.cpp
+        TrackCreator.cpp
+        TrackCreator.h
 )
 target_link_libraries(TrackMapperSceneLib PRIVATE fbxsdk)
 fbx_target_finalize(TrackMapperSceneLib)

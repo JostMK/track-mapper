@@ -30,9 +30,13 @@ let rasters = {}; // stores all raster paths for giving to the server later
 let rasterCounter = 0; // strictly increasing index / id for created rasters
 
 // -- Creating Track Variables --
+const trackName = document.getElementById('input-track-name');
 const progressText = document.getElementById('progress-text');
 const progressPopup = document.getElementById('progress-popup');
 progressPopup.classList.add('hide');
+
+const PROGRESS_UPDATE_INTERVAL_MS = 5000;
+let progressUpdaterId;
 
 // -- Adding Paths Functionality --
 map.on("click", onMapClick);
@@ -245,7 +249,60 @@ async function addRaster() {
 }
 
 // -- Adding Track Creation --
-function startTrackCreation(){
+async function startTrackCreation(){
+    // show progress popup
     progressText.innerText = "Submitting Track Data";
     progressPopup.classList.remove('hide');
+
+    // create track object
+    const name = trackName.value.trim();
+    if (name === "")
+        name = "TestTrack";
+
+    // > collect the file path for all rasters
+    const rasterFilePaths = []
+    Object.keys(rasters).forEach(r => rasterFilePaths.push(r.filePath));
+
+    // > collect all the points for each path
+    const pointsOfPaths = []
+    Object.keys(paths).forEach(p => pointsOfPaths.push(p.positions));
+
+    const track = {
+        name: name,
+        rasters: rasterFilePaths,
+        paths: pointsOfPaths
+    }
+
+    // send track for creation to backend
+    const reqJson = JSON.stringify(track);
+    const res = await fetch("/api/create_track/" + btoa(reqJson));
+
+    // check if data send is valid
+    const json = await res.json();
+    if (json["error"] != undefined) {
+        console.error(json["error"])
+        alert("Error while trying to create track:\n" + json["error"]);
+        return;
+    }
+
+    // start periodic progress checker
+    progressUpdaterId = setInterval(updateProgress, PROGRESS_UPDATE_INTERVAL_MS);
+    updateProgress();
+}
+
+async function updateProgress(){
+    const res = await fetch("/api/get_progress");
+    const json = await res.json();
+
+    progressText.innerText = json["progress"];
+
+    if(json["finished"])
+        finishTrackCreation();
+}
+
+function finishTrackCreation(){
+    clearInterval(progressUpdaterId);
+    progressPopup.classList.remove('add');
+
+    // TODO: maybe clean up existing track
 }

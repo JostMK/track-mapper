@@ -3,14 +3,14 @@
 //
 
 #include "BasicWebApp.h"
+
 #include "../graph/DijkstraPathfinding.h"
 #include "../graph/FMIGraphReader.h"
 #include "../graph/SimpleWorldGrid.h"
 #include "../mesh/gdal_wrapper.h"
 #include "../mesh/raster_reader.h"
-#include "crow.h"
 
-#include "strings_config.h"
+#include "errors.h"
 
 namespace TrackMapper::Web {
 
@@ -20,11 +20,10 @@ namespace TrackMapper::Web {
     } catch (...) {
     }
 
-    void BasicWebApp::Start() {
+    void BasicWebApp::Start(TrackData &trackData) {
         const DijkstraPathfinding pathfinding(mGraph);
         const SimpleWorldGrid grid(mGraph, 0.01);
 
-        crow::SimpleApp app;
         // app.loglevel(crow::LogLevel::Debug);
 
         // get closest node to mouse click endpoint
@@ -140,8 +139,10 @@ namespace TrackMapper::Web {
         // REQ: base64 encoded json obj containing data for track creation
         // RES: error msg if error happens
         CROW_ROUTE(app, "/api/create_track/<string>")
-        ([](const std::string &base64JsonObj) {
+        ([&trackData](const std::string &base64JsonObj) {
             auto trackJson = crow::json::load(base64_decode(base64JsonObj));
+
+            // TODO implement
 
             crow::json::wvalue x;
             return x;
@@ -150,14 +151,19 @@ namespace TrackMapper::Web {
         // gets progress msg of track creation progress
         // RES: string containing progress msg
         CROW_ROUTE(app, "/api/get_progress")
-        ([&progressText = this->mProgressText]() {
+        ([&trackData]() {
             crow::json::wvalue x;
-            x["progress"] = progressText;
+            x["progress"] = trackData.GetProgress();
+            x["finished"] = trackData.IsFinished();
             return x;
         });
 
-        app.port(18080).run();
+        auto runner = app.port(18080).run_async();
+        // TODO: check if this not secretly makes it synchronous
+        runner.get(); // wait for server to start
     }
+
+    void createTrack() {}
 
     // copied from https://stackoverflow.com/questions/180947/base64-decode-snippet-in-c
     std::string base64_decode(const std::string &in) {
