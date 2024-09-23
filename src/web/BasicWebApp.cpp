@@ -159,6 +159,7 @@ namespace TrackMapper::Web {
             const auto trackJson = crow::json::load(base64_decode(base64JsonObj));
 
             const std::string name = trackJson["name"].s();
+            const std::string outPath = trackJson["output"].s();
             const std::string wkt = trackJson["wkt"].s();
             // if lo() misses const modifier please update crow past commit
             // https://github.com/CrowCpp/Crow/commit/a9e7b7321b0f7ef082cf509b762755136683beaf
@@ -167,7 +168,9 @@ namespace TrackMapper::Web {
             const auto pathsJson = trackJson["paths"].lo();
 
             trackData.name = name;
+
             // gets validated when track gets created
+            trackData.outputPath = outPath;
             trackData.projRef = Raster::ProjectionWrapper(wkt);
 
             trackData.rasterFiles.reserve(rastersJson.size());

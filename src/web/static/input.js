@@ -31,6 +31,7 @@ let rasterCounter = 0; // strictly increasing index / id for created rasters
 
 // -- Creating Track Variables --
 const trackName = document.getElementById('input-track-name');
+const outputPath = document.getElementById('input-output-path');
 const progressText = document.getElementById('progress-text');
 const progressSpinner = document.getElementById('progress-spinner');
 const progressPopup = document.getElementById('progress-popup');
@@ -260,6 +261,8 @@ async function startTrackCreation(){
     if (name === "")
         name = "TestTrack";
 
+    const outputLocation = outputPath.value.trim();
+
     // > collect the file path for all rasters
     const rasterFilePaths = []
     Object.keys(rasters).forEach(r => rasterFilePaths.push(rasters[r].filePath));
@@ -274,6 +277,7 @@ async function startTrackCreation(){
         name: name,
         rasters: rasterFilePaths,
         paths: pointsOfPaths,
+        output: outputLocation,
         wkt: projRef
     }
 

@@ -13,7 +13,7 @@ namespace TrackMapper::Scene {
 
     void TrackCreator::AddRaster(const std::string &filePath) {}
 
-    void TrackCreator::AddPath(const std::vector<Raster::OSMPoint> &points, const Raster::ProjectionWrapper &projRef) {}
+    void TrackCreator::AddRoad(const std::vector<Raster::OSMPoint> &points, const Raster::ProjectionWrapper &projRef) {}
 
     void TrackCreator::AddSpawn(const Raster::Point &pit, const Raster::Point &direction) {}
 

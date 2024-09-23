@@ -5,6 +5,8 @@
 #include "BasicWebApp.h"
 
 #include <csignal>
+#include <filesystem>
+#include <fstream>
 #include <iostream>
 
 #include "../mesh/gdal_wrapper.h"
@@ -90,6 +92,7 @@ void TrackWebApp() {
 bool CreateTrack(TrackData &data) {
     TrackMapper::Scene::TrackCreator creator(data.name);
 
+    // validate data
     if (data.rasterFiles.empty()) {
         const auto error = ERROR_NO_RASTER;
         std::cout << error << std::endl;
@@ -104,6 +107,29 @@ bool CreateTrack(TrackData &data) {
         return false;
     }
 
+    if (data.outputPath.empty()) {
+        const auto error = ERROR_NO_OUT_LOC;
+        std::cout << error << std::endl;
+        data.SetError(error);
+        return false;
+    }
+    const std::filesystem::path outDir(data.outputPath);
+    std::error_code ec;
+    if (!std::filesystem::is_directory(outDir, ec)) {
+        const auto error = ERROR_OUT_NOT_DIR;
+        std::cout << error << std::endl;
+        data.SetError(error);
+        return false;
+    }
+    if (ec) {
+        auto msg = ec.message();
+        const auto error = std::vformat(ERROR_INVALID_OUT_LOC, std::make_format_args(msg));
+        std::cout << error << std::endl;
+        data.SetError(error);
+        return false;
+    }
+
+    // setup proj ref
     if (data.projRef.Get().empty()) {
         // no projection ref provided: try reading one from the raster
         const TrackMapper::Raster::GDALDatasetWrapper dataset(data.rasterFiles[0]);
@@ -115,7 +141,6 @@ bool CreateTrack(TrackData &data) {
             data.SetError(error);
             return false;
         }
-
     } else {
         if (!data.projRef.IsValid()) {
             auto wkt = data.projRef.Get();
@@ -126,6 +151,7 @@ bool CreateTrack(TrackData &data) {
         }
     }
 
+    // creating tiles
     for (int i = 0; i < data.rasterFiles.size(); ++i) {
         const auto progress = std::format("Task 1/4: Creating tile {}/{}", i, data.rasterFiles.size());
         std::cout << progress << std::endl;
@@ -133,13 +159,15 @@ bool CreateTrack(TrackData &data) {
         creator.AddRaster(data.rasterFiles[i]);
     }
 
+    // creating roads
     for (int i = 0; i < data.paths.size(); ++i) {
         const auto progress = std::format("Task 2/4: Creating path {}/{}", i, data.paths.size());
         std::cout << progress << std::endl;
         data.SetProgress(progress);
-        creator.AddPath(data.paths[i], data.projRef);
+        creator.AddRoad(data.paths[i], data.projRef);
     }
 
+    // creating spawn
     {
         using Point = TrackMapper::Raster::Point;
 
@@ -155,16 +183,13 @@ bool CreateTrack(TrackData &data) {
         creator.AddSpawn(pit, dir);
     }
 
+    // exporting track
     {
         const auto progress = "Task 4/4: Writing track to disk";
         std::cout << progress << std::endl;
         data.SetProgress(progress);
 
-        // TODO: make this a field from the website
-        std::cout << "Enter path for exported track folder:" << std::endl;
-        std::string outFilePath;
-        std::cin >> outFilePath;
-        creator.Export(outFilePath);
+        creator.Export(data.outputPath);
 
         data.SetFinished();
     }

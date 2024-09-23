@@ -21,7 +21,7 @@ namespace TrackMapper::Scene {
         void AddRaster(const std::string &filePath);
 
         /// @note Make sure to first add all rasters so the path can get the correct height data
-        void AddPath(const std::vector<Raster::OSMPoint> &points, const Raster::ProjectionWrapper &projRef);
+        void AddRoad(const std::vector<Raster::OSMPoint> &points, const Raster::ProjectionWrapper &projRef);
 
         /// @note Adds the correct height to the position
         void AddSpawn(const Raster::Point &pit, const Raster::Point &direction);

@@ -13,5 +13,8 @@ inline const std::string ERROR_INVALID_PROJ = "[ERROR_R2] Provided projection re
 inline const std::string ERROR_FAILED_PROJ = "[ERROR_R3] Failed to project points, unknown reason!";
 inline const std::string ERROR_NO_RASTER = "[ERROR_T0] No raster files were provided, at least one is needed!";
 inline const std::string ERROR_NO_PATH = "[ERROR_T1] No paths were provided, at least one is needed!";
+inline const std::string ERROR_NO_OUT_LOC = "[ERROR_T2] No output location was provided!";
+inline const std::string ERROR_OUT_NOT_DIR = "[ERROR_T3] Provided output location is not a directory, please provide a valid path to a directory!";
+inline const std::string ERROR_INVALID_OUT_LOC = "[ERROR_T4] Provided output location is invalid!\n\n{}";
 
 #endif // ERROR_CODES_H

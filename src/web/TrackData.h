@@ -17,6 +17,7 @@ struct TrackData {
     std::string name;
     std::vector<std::string> rasterFiles;
     std::vector<Path> paths;
+    std::string outputPath;
     TrackMapper::Raster::ProjectionWrapper projRef;
 
 private:
