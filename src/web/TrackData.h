@@ -21,6 +21,7 @@ struct TrackData {
 
 private:
     std::string progress;
+    std::string error;
     bool isPopulated = false;
     bool isFinished = false;
 
@@ -55,6 +56,16 @@ public:
     [[nodiscard]] std::string GetProgress() {
         const std::lock_guard lock(mutex);
         return progress; // copies string
+    }
+
+    void SetError(const std::string &errorText) {
+        const std::lock_guard lock(mutex);
+        error = errorText;
+    }
+
+    [[nodiscard]] std::string GetError() {
+        const std::lock_guard lock(mutex);
+        return error; // copies string
     }
 };
 

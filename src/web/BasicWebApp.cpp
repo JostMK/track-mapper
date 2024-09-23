@@ -34,13 +34,13 @@ namespace TrackMapper::Web {
     BasicWebApp::BasicWebApp(const std::string &filePath) try : pImpl{std::make_unique<impl>(filePath)} {
     } catch (...) {
     }
-    BasicWebApp::~BasicWebApp() {} // needed to compile pImpl ideom
+    BasicWebApp::~BasicWebApp() = default; // needed for compile pImpl ideom
 
     void BasicWebApp::Start(TrackData &trackData) const {
 #ifdef NDEBUG
         pImpl->app.loglevel(crow::LogLevel::Error);
 #else
-        app.loglevel(crow::LogLevel::Debug);
+        pImpl->app.loglevel(crow::LogLevel::Info);
 #endif
 
         // get closest node to mouse click endpoint
@@ -106,7 +106,7 @@ namespace TrackMapper::Web {
 
             if (!dataset.IsValid()) {
                 crow::json::wvalue x;
-                x["error"] = ERROR_INVALID_FILE + " Failed to open file: " + rasterFilePath;
+                x["error"] = std::vformat(ERROR_INVALID_FILE, std::make_format_args(rasterFilePath));
                 return x;
             }
 
@@ -115,7 +115,7 @@ namespace TrackMapper::Web {
                 // check if custom proj ref was provided
                 if (!rasterJson.has("projRef")) {
                     crow::json::wvalue x;
-                    x["error"] = ERROR_MISSING_PROJ + " File misses projection reference, please manually specify it!";
+                    x["error"] = ERROR_MISSING_PROJ;
                     return x;
                 }
 
@@ -125,9 +125,7 @@ namespace TrackMapper::Web {
                 // validate custom proj ref
                 if (!srcProjRef.IsValid()) {
                     crow::json::wvalue x;
-                    x["error"] = ERROR_INVALID_PROJ +
-                                 " Provided projection reference does not discribe a valid projection:\n\n" +
-                                 customProjRef;
+                    x["error"] = std::vformat(ERROR_INVALID_PROJ, std::make_format_args(customProjRef));
                     return x;
                 }
             }
@@ -135,7 +133,7 @@ namespace TrackMapper::Web {
             auto extends = Raster::getDatasetExtends(dataset);
             if (auto success = Raster::reprojectPoints(extends, srcProjRef, Raster::osmPointsProjRef); !success) {
                 crow::json::wvalue x;
-                x["error"] = ERROR_FAILED_PROJ + " Failed to project points to WGS84!";
+                x["error"] = ERROR_FAILED_PROJ;
                 return x;
             }
 
@@ -157,12 +155,50 @@ namespace TrackMapper::Web {
         // REQ: base64 encoded json obj containing data for track creation
         // RES: error msg if error happens
         CROW_ROUTE(pImpl->app, "/api/create_track/<string>")
-        ([&trackData](const std::string &base64JsonObj) {
-            auto trackJson = crow::json::load(base64_decode(base64JsonObj));
+        ([&trackData, &mGraph = pImpl->mGraph](const std::string &base64JsonObj) {
+            const auto trackJson = crow::json::load(base64_decode(base64JsonObj));
 
-            // TODO implement
+            const std::string name = trackJson["name"].s();
+            // if lo() misses const modifier please update crow past commit
+            // https://github.com/CrowCpp/Crow/commit/a9e7b7321b0f7ef082cf509b762755136683beaf
+            // or manually modify header
+            const auto rastersJson = trackJson["rasters"].lo();
+            const auto pathsJson = trackJson["paths"].lo();
+
+            trackData.name = name;
+
+            // if wkt non empty validate and use it
+            if (const std::string wkt = trackJson["wkt"].s(); !wkt.empty()) {
+                Raster::ProjectionWrapper proj(wkt);
+                if (!proj.IsValid()) {
+                    crow::json::wvalue x;
+                    x["error"] = std::vformat(ERROR_INVALID_PROJ, std::make_format_args(wkt));
+                    return x;
+                }
+                trackData.projRef = proj;
+            }
+
+            trackData.rasterFiles.reserve(rastersJson.size());
+            for (const auto &rasterPath: rastersJson) {
+                trackData.rasterFiles.push_back(rasterPath.s());
+            }
+
+            trackData.paths.resize(pathsJson.size());
+            for (int i = 0; i < pathsJson.size(); ++i) {
+                const auto pathJson = pathsJson[i].lo();
+                trackData.paths[i].reserve(pathJson.size());
+                for (const auto &node: pathJson) {
+                    const auto nodeId = static_cast<int>(node.i()); // node id should not be bigger then int
+                    const auto [lat, lng] = mGraph.GetLocation(nodeId);
+                    trackData.paths[i].emplace_back(lat, lng);
+                }
+            }
+
+            trackData.SetPopulated();
+            trackData.SetProgress("Submitting Track Data");
 
             crow::json::wvalue x;
+            x["status"] = "ok";
             return x;
         });
 
@@ -173,6 +209,9 @@ namespace TrackMapper::Web {
             crow::json::wvalue x;
             x["progress"] = trackData.GetProgress();
             x["finished"] = trackData.IsFinished();
+            if (const auto error = trackData.GetError(); !error.empty())
+                x["error"] = error;
+
             return x;
         });
 

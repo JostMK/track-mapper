@@ -255,32 +255,37 @@ async function startTrackCreation(){
     progressPopup.classList.remove('hide');
 
     // create track object
-    const name = trackName.value.trim();
+    let name = trackName.value.trim();
     if (name === "")
         name = "TestTrack";
 
     // > collect the file path for all rasters
     const rasterFilePaths = []
-    Object.keys(rasters).forEach(r => rasterFilePaths.push(r.filePath));
+    Object.keys(rasters).forEach(r => rasterFilePaths.push(rasters[r].filePath));
 
     // > collect all the points for each path
     const pointsOfPaths = []
-    Object.keys(paths).forEach(p => pointsOfPaths.push(p.positions));
+    Object.keys(paths).forEach(p => pointsOfPaths.push(paths[p].positions));
+
+    const projRef = rasterCustomProjRef.value.trim();
 
     const track = {
         name: name,
         rasters: rasterFilePaths,
-        paths: pointsOfPaths
+        paths: pointsOfPaths,
+        wkt: projRef
     }
 
     // send track for creation to backend
     const reqJson = JSON.stringify(track);
+    console.log("Sending create track payload:", reqJson);
+    console.log(track);
     const res = await fetch("/api/create_track/" + btoa(reqJson));
 
     // check if data send is valid
     const json = await res.json();
-    if (json["error"] != undefined) {
-        console.error(json["error"])
+    if (json["error"]) {
+        console.error(json["error"]);
         alert("Error while trying to create track:\n" + json["error"]);
         return;
     }
@@ -298,11 +303,16 @@ async function updateProgress(){
 
     if(json["finished"])
         finishTrackCreation();
+
+    if (json["error"]) {
+        console.error(json["error"]);
+        alert("Error while trying to create track:\n" + json["error"]);
+        finishTrackCreation();
+        return;
+    }
 }
 
 function finishTrackCreation(){
     clearInterval(progressUpdaterId);
     progressPopup.classList.remove('add');
-
-    // TODO: maybe clean up existing track
 }

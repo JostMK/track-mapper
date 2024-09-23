@@ -8,6 +8,7 @@
 #include "../mesh/gdal_wrapper.h"
 #include "../scene/TrackCreator.h"
 #include "TrackData.h"
+#include "errors.h"
 
 void TrackWebApp();
 void CreateTrack(TrackData &data);
@@ -25,7 +26,7 @@ void TrackWebApp() {
         std::string filePath;
         std::cin >> filePath;
 
-        TrackMapper::Web::BasicWebApp app(filePath);
+        const TrackMapper::Web::BasicWebApp app(filePath);
         TrackData data;
 
         app.Start(data);
@@ -50,22 +51,47 @@ void TrackWebApp() {
 void CreateTrack(TrackData &data) {
     TrackMapper::Scene::TrackCreator creator(data.name);
 
+    if(data.rasterFiles.empty()) {
+        const auto error = ERROR_NO_RASTER;
+        std::cout << error << std::endl;
+        data.SetError(error);
+        return;
+    }
+
+    if(data.paths.empty()) {
+        const auto error = ERROR_NO_PATH;
+        std::cout << error << std::endl;
+        data.SetError(error);
+        return;
+    }
+
+    if (data.projRef.Get().empty()) {
+        // no projection ref provided: try reading one from the raster
+        const TrackMapper::Raster::GDALDatasetWrapper dataset(data.rasterFiles[0]);
+        data.projRef = dataset.GetProjectionRef();
+
+        if (!data.projRef.IsValid()) {
+            const auto error = ERROR_MISSING_PROJ;
+            std::cout << error << std::endl;
+            data.SetError(error);
+            return;
+        }
+
+    } else {
+        if (!data.projRef.IsValid()) {
+            auto wkt = data.projRef.Get();
+            const auto error = std::vformat(ERROR_INVALID_PROJ, std::make_format_args(wkt));
+            std::cout << error << std::endl;
+            data.SetError(error);
+            return;
+        }
+    }
+
     for (int i = 0; i < data.rasterFiles.size(); ++i) {
         const auto progress = std::format("Task 1/4: Creating tile {}/{}", i, data.rasterFiles.size());
         std::cout << progress << std::endl;
         data.SetProgress(progress);
         creator.AddRaster(data.rasterFiles[i]);
-    }
-
-    if (!data.projRef.IsValid()) {
-        // TODO: fail if provided projRef is invalid
-    } else {
-        const TrackMapper::Raster::GDALDatasetWrapper dataset(data.rasterFiles[0]);
-        data.projRef = dataset.GetProjectionRef();
-
-        if (!data.projRef.IsValid()) {
-            // TODO: fail if raster does not contain projRef and a custom one was also not supplied
-        }
     }
 
     for (int i = 0; i < data.paths.size(); ++i) {
