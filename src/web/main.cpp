@@ -153,7 +153,7 @@ bool CreateTrack(TrackData &data) {
 
     // creating tiles
     for (int i = 0; i < data.rasterFiles.size(); ++i) {
-        const auto progress = std::format("Task 1/4: Creating tile {}/{}", i, data.rasterFiles.size());
+        const auto progress = std::format("Task 1/4: Creating tile {}/{}", i + 1, data.rasterFiles.size());
         std::cout << progress << std::endl;
         data.SetProgress(progress);
         creator.AddRaster(data.rasterFiles[i]);
@@ -161,7 +161,7 @@ bool CreateTrack(TrackData &data) {
 
     // creating roads
     for (int i = 0; i < data.paths.size(); ++i) {
-        const auto progress = std::format("Task 2/4: Creating path {}/{}", i, data.paths.size());
+        const auto progress = std::format("Task 2/4: Creating path {}/{}", i + 1, data.paths.size());
         std::cout << progress << std::endl;
         data.SetProgress(progress);
         creator.AddRoad(data.paths[i], data.projRef);
@@ -176,11 +176,9 @@ bool CreateTrack(TrackData &data) {
         data.SetProgress(progress);
 
         const auto path = data.paths[0];
-        // path[0] will not be added to path using CatmullRom interpolation so path[1] is the edge of the road
+        // Note: path[0] will not be added to path using CatmullRom interpolation so path[1] is the edge of the road
         // to have a little bit of safe margin choose path[3] as spawn point
-        const auto pit = Point{path[3].lat, 0, path[3].lng}; // height will be set in TrackCreator
-        const auto dir = Point{path[4].lat, 0, path[4].lng} - pit;
-        creator.AddSpawn(pit, dir);
+        creator.AddSpawn(path[3], path[4], data.projRef);
     }
 
     // exporting track

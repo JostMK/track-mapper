@@ -29,6 +29,11 @@ namespace TrackMapper::Raster {
 
         [[nodiscard]] double SqLength() const { return x * x + y * y + z * z; }
         [[nodiscard]] double Length() const { return sqrt(SqLength()); }
+
+        [[nodiscard]] Point Transform(const GeoTransform &t) const {
+            // see: https://gdal.org/en/latest/tutorials/geotransforms_tut.html [2024-09-24]
+            return {t[0] + t[1] * x - z * t[2], y, t[3] + t[4] * x - z * t[5]};
+        }
     };
     inline Point operator*(const double factor, const Point &point) {
         return Point{point.x * factor, point.y * factor, point.z * factor};
@@ -39,6 +44,7 @@ namespace TrackMapper::Raster {
         int sizeX, sizeY;
         Point origin;
         ProjectionWrapper projRef;
+        GeoTransform transform;
 
         [[nodiscard]] int GetIndex(const int x, const int y) const { return y * sizeX + x; }
     };

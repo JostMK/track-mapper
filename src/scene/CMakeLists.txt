@@ -21,7 +21,7 @@ add_library(TrackMapperSceneLib STATIC
         TrackCreator.cpp
         TrackCreator.h
 )
-target_link_libraries(TrackMapperSceneLib PRIVATE fbxsdk)
+target_link_libraries(TrackMapperSceneLib PRIVATE TrackMapperMeshLib fbxsdk )
 fbx_target_finalize(TrackMapperSceneLib)
 
 add_executable(TrackMapperSceneConsoleApp

@@ -21,18 +21,20 @@ namespace TrackMapper::Scene {
         void AddRaster(const std::string &filePath);
 
         /// @note Make sure to first add all rasters so the path can get the correct height data
-        void AddRoad(const std::vector<Raster::OSMPoint> &points, const Raster::ProjectionWrapper &projRef);
+        void AddRoad(std::vector<Raster::OSMPoint> &points, const Raster::ProjectionWrapper &projRef);
 
-        /// @note Adds the correct height to the position
-        void AddSpawn(const Raster::Point &pit, const Raster::Point &direction);
+        /// Places Pit and Start spawn at p0 pointing towards p1
+        /// @note Reprojects and adds the correct height to the position
+        void AddSpawn(const Raster::OSMPoint &p0, const Raster::OSMPoint &p1, const Raster::ProjectionWrapper &projRef);
 
         void Export(const std::string &directoryPath) const;
 
     private:
         std::string mName;
         TrackScene mScene;
-        std::vector<Raster::PointGrid> rasters; // needed for path height data
-        Raster::Point origin{}; // overall 3D reference point
+        std::vector<Raster::PointGrid> mGrids; // needed for path height data
+        Raster::Point mOrigin{}; // overall 3D reference point
+        bool mOriginSet = false;
     };
 
 } // namespace TrackMapper::Scene

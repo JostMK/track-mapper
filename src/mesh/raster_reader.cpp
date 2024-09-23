@@ -21,6 +21,7 @@ namespace TrackMapper::Raster {
 
         grid.origin = {transform[0], 0, -transform[3]};
         grid.projRef = dataset.GetProjectionRef();
+        grid.transform = transform;
 
         const std::vector<float> &values = dataset.GetData();
         grid.points.reserve(values.size());
@@ -90,13 +91,14 @@ namespace TrackMapper::Raster {
     }
 
     void interpolateHeightInGrid(const PointGrid &grid, Point &point) {
+        // TODO: this can only handle north aligned transforms - not transforms with rotation or shearing
         // TODO: Add bilinear interpolation
-        const int x = std::floor(point.x);
+        const int xIndex = std::floor(point.x / grid.transform[1]);
         // Note: to conform with the coordinate system of fbx files the z axis is inverted so for going back into raster
         // space it needs to be inverted again
-        const int y = std::floor(-point.z);
+        const int yIndex = std::floor(-point.z / grid.transform[5]);
 
-        point.y = grid.points[grid.GetIndex(x, y)].y;
+        point.y = grid.points[grid.GetIndex(xIndex, yIndex)].y;
     }
 
 } // namespace TrackMapper::Raster
