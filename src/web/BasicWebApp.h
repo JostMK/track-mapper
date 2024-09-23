@@ -15,6 +15,7 @@ namespace TrackMapper::Web {
         explicit BasicWebApp(const std::string &filePath);
         ~BasicWebApp();
         void Start(TrackData &trackData) const;
+        void Stop() const;
 
     private:
         // opaque pointer to avoid linking against crow when including this header

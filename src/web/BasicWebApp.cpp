@@ -218,6 +218,9 @@ namespace TrackMapper::Web {
         std::cout << "Starting web app.." << std::endl;
         pImpl->runner = pImpl->app.port(18080).run_async();
     }
+    void BasicWebApp::Stop() const {
+        pImpl->app.stop();
+    }
 
     void createTrack() {}
 

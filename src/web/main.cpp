@@ -4,7 +4,9 @@
 
 #include "BasicWebApp.h"
 
+#include <csignal>
 #include <iostream>
+
 #include "../mesh/gdal_wrapper.h"
 #include "../scene/TrackCreator.h"
 #include "TrackData.h"
@@ -14,7 +16,23 @@ void TrackWebApp();
 void CreateTrack(TrackData &data);
 void OpenWebpage(const std::string &url);
 
+std::unique_ptr<TrackMapper::Web::BasicWebApp> pApp;
+
+void close_gracefully() {
+    if (pApp) {
+        std::cout << "Closing web server.." << std::endl;
+        pApp->Stop();
+    }
+}
+void close_gracefully(const int signal) { close_gracefully(); };
+
+
 int main() {
+    // tries to gracefully clean up if possible
+    std::signal(SIGINT, close_gracefully);
+    std::signal(SIGTERM, close_gracefully);
+    std::atexit(close_gracefully);
+
     TrackWebApp();
     return 0;
 }
@@ -26,10 +44,10 @@ void TrackWebApp() {
         std::string filePath;
         std::cin >> filePath;
 
-        const TrackMapper::Web::BasicWebApp app(filePath);
+        pApp = std::make_unique<TrackMapper::Web::BasicWebApp>(filePath);
         TrackData data;
 
-        app.Start(data);
+        pApp->Start(data);
         OpenWebpage("http://localhost:18080/static/index.html");
 
         std::cout << "Waiting for input from web app.." << std::endl;
@@ -41,6 +59,14 @@ void TrackWebApp() {
         CreateTrack(data);
 
         std::cout << "Finished Track!" << std::endl;
+
+        // waits for user input befor closing console app
+        std::cout << "Press ENTER to close process" << std::endl;
+        std::cin.ignore();
+        std::string await;
+        std::getline(std::cin, await);
+        std::cout << await; // so variable does not get removed by optimizer
+
     } catch (const std::exception &e) {
         std::cout << e.what() << std::endl;
     } catch (...) {
@@ -51,14 +77,14 @@ void TrackWebApp() {
 void CreateTrack(TrackData &data) {
     TrackMapper::Scene::TrackCreator creator(data.name);
 
-    if(data.rasterFiles.empty()) {
+    if (data.rasterFiles.empty()) {
         const auto error = ERROR_NO_RASTER;
         std::cout << error << std::endl;
         data.SetError(error);
         return;
     }
 
-    if(data.paths.empty()) {
+    if (data.paths.empty()) {
         const auto error = ERROR_NO_PATH;
         std::cout << error << std::endl;
         data.SetError(error);
