@@ -159,6 +159,7 @@ namespace TrackMapper::Web {
             const auto trackJson = crow::json::load(base64_decode(base64JsonObj));
 
             const std::string name = trackJson["name"].s();
+            const std::string wkt = trackJson["wkt"].s();
             // if lo() misses const modifier please update crow past commit
             // https://github.com/CrowCpp/Crow/commit/a9e7b7321b0f7ef082cf509b762755136683beaf
             // or manually modify header
@@ -166,17 +167,8 @@ namespace TrackMapper::Web {
             const auto pathsJson = trackJson["paths"].lo();
 
             trackData.name = name;
-
-            // if wkt non empty validate and use it
-            if (const std::string wkt = trackJson["wkt"].s(); !wkt.empty()) {
-                Raster::ProjectionWrapper proj(wkt);
-                if (!proj.IsValid()) {
-                    crow::json::wvalue x;
-                    x["error"] = std::vformat(ERROR_INVALID_PROJ, std::make_format_args(wkt));
-                    return x;
-                }
-                trackData.projRef = proj;
-            }
+            // gets validated when track gets created
+            trackData.projRef = Raster::ProjectionWrapper(wkt);
 
             trackData.rasterFiles.reserve(rastersJson.size());
             for (const auto &rasterPath: rastersJson) {
@@ -209,18 +201,17 @@ namespace TrackMapper::Web {
             crow::json::wvalue x;
             x["progress"] = trackData.GetProgress();
             x["finished"] = trackData.IsFinished();
-            if (const auto error = trackData.GetError(); !error.empty())
+            if (const auto error = trackData.GetError(); !error.empty()) {
                 x["error"] = error;
-
+                trackData.SetError("");
+            }
             return x;
         });
 
         std::cout << "Starting web app.." << std::endl;
         pImpl->runner = pImpl->app.port(18080).run_async();
     }
-    void BasicWebApp::Stop() const {
-        pImpl->app.stop();
-    }
+    void BasicWebApp::Stop() const { pImpl->app.stop(); }
 
     void createTrack() {}
 

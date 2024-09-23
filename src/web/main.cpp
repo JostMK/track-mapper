@@ -13,7 +13,7 @@
 #include "errors.h"
 
 void TrackWebApp();
-void CreateTrack(TrackData &data);
+bool CreateTrack(TrackData &data);
 void OpenWebpage(const std::string &url);
 
 std::unique_ptr<TrackMapper::Web::BasicWebApp> pApp;
@@ -50,17 +50,30 @@ void TrackWebApp() {
         pApp->Start(data);
         OpenWebpage("http://localhost:18080/static/index.html");
 
-        std::cout << "Waiting for input from web app.." << std::endl;
-        while (!data.IsPopulated()) {
-            std::this_thread::sleep_for(std::chrono::seconds(1));
-        }
+        bool success = false;
+        while (!success) {
+            std::cout << "Waiting for input from web app.." << std::endl;
+            while (!data.IsPopulated()) {
+                std::this_thread::sleep_for(std::chrono::seconds(1));
+            }
 
-        std::cout << "Received data.. Creating Track.." << std::endl;
-        CreateTrack(data);
+            std::cout << "Received data.. Creating Track.." << std::endl;
+            success = CreateTrack(data);
+
+            if (!success) {
+                // resets track data to be set again by web app
+                data.rasterFiles.clear();
+                data.paths.clear();
+                data.projRef = TrackMapper::Raster::ProjectionWrapper();
+                // TODO: possible deadlock
+                // -> if website sends new create_track request between SetError in CreateTrack and this line
+                data.UnSetPopulated();
+            }
+        }
 
         std::cout << "Finished Track!" << std::endl;
 
-        // waits for user input befor closing console app
+        // waits for user input before closing console app
         std::cout << "Press ENTER to close process" << std::endl;
         std::cin.ignore();
         std::string await;
@@ -74,21 +87,21 @@ void TrackWebApp() {
     }
 }
 
-void CreateTrack(TrackData &data) {
+bool CreateTrack(TrackData &data) {
     TrackMapper::Scene::TrackCreator creator(data.name);
 
     if (data.rasterFiles.empty()) {
         const auto error = ERROR_NO_RASTER;
         std::cout << error << std::endl;
         data.SetError(error);
-        return;
+        return false;
     }
 
     if (data.paths.empty()) {
         const auto error = ERROR_NO_PATH;
         std::cout << error << std::endl;
         data.SetError(error);
-        return;
+        return false;
     }
 
     if (data.projRef.Get().empty()) {
@@ -100,7 +113,7 @@ void CreateTrack(TrackData &data) {
             const auto error = ERROR_MISSING_PROJ;
             std::cout << error << std::endl;
             data.SetError(error);
-            return;
+            return false;
         }
 
     } else {
@@ -109,7 +122,7 @@ void CreateTrack(TrackData &data) {
             const auto error = std::vformat(ERROR_INVALID_PROJ, std::make_format_args(wkt));
             std::cout << error << std::endl;
             data.SetError(error);
-            return;
+            return false;
         }
     }
 
@@ -152,7 +165,11 @@ void CreateTrack(TrackData &data) {
         std::string outFilePath;
         std::cin >> outFilePath;
         creator.Export(outFilePath);
+
+        data.SetFinished();
     }
+
+    return true;
 }
 
 void OpenWebpage(const std::string &url) {

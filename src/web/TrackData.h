@@ -32,6 +32,10 @@ public:
         const std::lock_guard lock(mutex);
         isPopulated = true;
     }
+    void UnSetPopulated() {
+        const std::lock_guard lock(mutex);
+        isPopulated = false;
+    }
 
     [[nodiscard]] bool IsPopulated() {
         const std::lock_guard lock(mutex);
@@ -69,4 +73,4 @@ public:
     }
 };
 
-#endif //TRACKDATA_H
+#endif // TRACKDATA_H

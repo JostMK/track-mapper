@@ -32,10 +32,11 @@ let rasterCounter = 0; // strictly increasing index / id for created rasters
 // -- Creating Track Variables --
 const trackName = document.getElementById('input-track-name');
 const progressText = document.getElementById('progress-text');
+const progressSpinner = document.getElementById('progress-spinner');
 const progressPopup = document.getElementById('progress-popup');
 progressPopup.classList.add('hide');
 
-const PROGRESS_UPDATE_INTERVAL_MS = 5000;
+const PROGRESS_UPDATE_INTERVAL_MS = 2000;
 let progressUpdaterId;
 
 // -- Adding Paths Functionality --
@@ -301,18 +302,20 @@ async function updateProgress(){
 
     progressText.innerText = json["progress"];
 
-    if(json["finished"])
-        finishTrackCreation();
+    if(json["finished"]){
+        console.log("Track creation finished!");
+        clearInterval(progressUpdaterId);
+        progressText.innerText = "Track creation finished, tab can be closed now..";
+        progressSpinner.classList.add('hide');
+    }
 
     if (json["error"]) {
+        console.log("Track creation failed!");
         console.error(json["error"]);
         alert("Error while trying to create track:\n" + json["error"]);
-        finishTrackCreation();
+
+        clearInterval(progressUpdaterId);
+        progressPopup.classList.add('hide');
         return;
     }
-}
-
-function finishTrackCreation(){
-    clearInterval(progressUpdaterId);
-    progressPopup.classList.remove('add');
 }
