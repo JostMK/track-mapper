@@ -5,6 +5,7 @@
 #include <chrono>
 #include <iostream>
 
+#include "gdal_wrapper.h"
 #include "mesh_operations.h"
 #include "raster_reader.h"
 
@@ -63,9 +64,9 @@ void createPath() {
         pathFile.close();
     }
 
-    OGRSpatialReference dstProjRef(grid.wkt.c_str());
+    TrackMapper::Raster::ProjectionWrapper dstProjRef = grid.projRef;
 
-    while (dstProjRef.Validate() != OGRERR_NONE) {
+    while (!dstProjRef.IsValid()) {
         std::cout << "No valid projection reference in provided raster file!" << std::endl;
         std::cout << "Specify projection reference manually (or press 'q' to quit):" << std::endl;
         std::string inProjRef;
@@ -74,7 +75,7 @@ void createPath() {
         if (inProjRef[0] == 'q')
             return;
 
-        dstProjRef = OGRSpatialReference(inProjRef.c_str());
+        dstProjRef = TrackMapper::Raster::ProjectionWrapper(inProjRef);
     }
 
     TrackMapper::Raster::reprojectOSMPoints(points, dstProjRef);
@@ -88,6 +89,9 @@ void createPath() {
     }
 
     const auto mesh = TrackMapper::Mesh::meshFromPath(path, 6, 5);
+
+    std::cout << "Vertices: " << mesh.number_of_vertices() << " Edges: " << mesh.number_of_edges()
+              << " Faces: " << mesh.number_of_faces() << std::endl;
 
     std::cout << "\nSpecify file output path: (.off .obj .stl .ply .ts .vtp)" << std::endl;
     std::string outFilePath;

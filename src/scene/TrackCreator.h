@@ -7,19 +7,21 @@
 #include <string>
 #include <vector>
 
+#include "../mesh/gdal_wrapper.h"
 #include "../mesh/raster_reader.h"
+
 #include "TrackScene.h"
 
 namespace TrackMapper::Scene {
 
     class TrackCreator {
     public:
-        explicit TrackCreator(const std::string &name);
+        explicit TrackCreator(std::string name);
 
         void AddRaster(const std::string &filePath);
 
         /// @note Make sure to first add all rasters so the path can get the correct height data
-        void AddPath(const std::vector<Raster::OSMPoint> &points, OGRSpatialReference projRef);
+        void AddPath(const std::vector<Raster::OSMPoint> &points, const Raster::ProjectionWrapper &projRef);
 
         /// @note Adds the correct height to the position
         void AddSpawn(const Raster::Point &pit, const Raster::Point &direction);

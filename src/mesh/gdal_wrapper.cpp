@@ -6,8 +6,27 @@
 
 #include <gdal_alg.h>
 #include <gdal_priv.h>
+#include <ogr_spatialref.h>
+
+#include <utility>
 
 namespace TrackMapper::Raster {
+
+    // ----- ProjectionWrapper -----
+
+    ProjectionWrapper::ProjectionWrapper() = default;
+    ProjectionWrapper::ProjectionWrapper(std::string wkt) : mWKT(std::move(wkt)) {
+        const OGRSpatialReference spatRef(Get().c_str());
+        mValid = spatRef.Validate() == OGRERR_NONE;
+    }
+
+    std::string ProjectionWrapper::Get() const {
+        const auto copy = mWKT;
+        return copy;
+    }
+
+    bool ProjectionWrapper::IsValid() const { return mValid; }
+
 
     // ----- GDALDatasetWrapper -----
 
@@ -30,7 +49,7 @@ namespace TrackMapper::Raster {
         invalid = false;
 
         pDataset->GetGeoTransform(mTransform.data());
-        mProjRef = OGRSpatialReference(pDataset->GetProjectionRef());
+        mProjRef = ProjectionWrapper(pDataset->GetProjectionRef());
 
         // moving ownership of the dataset to impl struct
         pImpl = std::make_unique<impl>(std::move(pDataset));
@@ -42,7 +61,7 @@ namespace TrackMapper::Raster {
         if (!invalid)
             pImpl->pDataset->Close();
     }
-    bool GDALDatasetWrapper::isValid() const { return !invalid; }
+    bool GDALDatasetWrapper::IsValid() const { return !invalid; }
 
     const GeoTransform &GDALDatasetWrapper::GetGeoTransform() const { return mTransform; }
 
@@ -82,7 +101,7 @@ namespace TrackMapper::Raster {
         return mData;
     }
 
-    const OGRSpatialReference &GDALDatasetWrapper::GetProjectionRef() const { return mProjRef; }
+    const ProjectionWrapper &GDALDatasetWrapper::GetProjectionRef() const { return mProjRef; }
 
 
     // ----- GDALReprojectionTransformer -----
@@ -93,11 +112,14 @@ namespace TrackMapper::Raster {
         explicit GDALDatasetWrapper::impl(void *transformer) : transformer(transformer) {}
     };
 
-    GDALReprojectionTransformer::GDALReprojectionTransformer(OGRSpatialReference &srcProjRef,
-                                                             OGRSpatialReference &dstProjRef) {
+    GDALReprojectionTransformer::GDALReprojectionTransformer(const ProjectionWrapper &srcProjRef,
+                                                             const ProjectionWrapper &dstProjRef) {
 
-        auto transformer = GDALCreateReprojectionTransformerEx(OGRSpatialReference::ToHandle(&srcProjRef),
-                                                               OGRSpatialReference::ToHandle(&dstProjRef), nullptr);
+        OGRSpatialReference srcProj(srcProjRef.Get().c_str());
+        OGRSpatialReference dstProj(dstProjRef.Get().c_str());
+
+        auto transformer = GDALCreateReprojectionTransformerEx(OGRSpatialReference::ToHandle(&srcProj),
+                                                               OGRSpatialReference::ToHandle(&dstProj), nullptr);
         pImpl = std::make_unique<impl>(transformer);
     }
 

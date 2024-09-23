@@ -5,11 +5,12 @@
 #include "BasicWebApp.h"
 
 #include <iostream>
+#include "../mesh/gdal_wrapper.h"
 #include "../scene/TrackCreator.h"
 #include "TrackData.h"
 
 void TrackWebApp();
-void CreateTrack(const TrackData &data);
+void CreateTrack(TrackData &data);
 void OpenWebpage(const std::string &url);
 
 int main() {
@@ -56,18 +57,13 @@ void CreateTrack(TrackData &data) {
         creator.AddRaster(data.rasterFiles[i]);
     }
 
-    OGRSpatialReference projRef;
-    if (!data.projRefWkt.empty()) {
-        projRef(data.projRefWkt);
-
-        if(projRef.Validate() != OGRERR_NONE) {
-            // TODO: fail if provided projRef is invalid
-        }
+    if (!data.projRef.IsValid()) {
+        // TODO: fail if provided projRef is invalid
     } else {
         const TrackMapper::Raster::GDALDatasetWrapper dataset(data.rasterFiles[0]);
-        projRef = dataset.GetProjectionRef();
+        data.projRef = dataset.GetProjectionRef();
 
-        if(projRef.Validate() != OGRERR_NONE) {
+        if (!data.projRef.IsValid()) {
             // TODO: fail if raster does not contain projRef and a custom one was also not supplied
         }
     }
@@ -76,7 +72,7 @@ void CreateTrack(TrackData &data) {
         const auto progress = std::format("Task 2/4: Creating path {}/{}", i, data.paths.size());
         std::cout << progress << std::endl;
         data.SetProgress(progress);
-        creator.AddPath(data.paths[i], projRef);
+        creator.AddPath(data.paths[i], data.projRef);
     }
 
     {
@@ -122,5 +118,7 @@ void OpenWebpage(const std::string &url) {
     const std::string cmd = "xdg-open ";
 #endif // no plattform detected will create an compiler error here since cmd will not be defined
 
-    system((cmd + url).c_str());
+    const auto fullCmd = cmd + url;
+    std::cout << "Executing: " << fullCmd << std::endl;
+    system(fullCmd.c_str());
 }

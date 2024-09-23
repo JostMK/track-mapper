@@ -12,7 +12,7 @@
 
 namespace TrackMapper::Raster {
 
-    inline OGRSpatialReference osmPointsProjRef(
+    inline ProjectionWrapper osmPointsProjRef(
             R"(GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","4326"]])");
 
     struct OSMPoint {
@@ -38,7 +38,7 @@ namespace TrackMapper::Raster {
         std::vector<Point> points;
         int sizeX, sizeY;
         Point origin;
-        std::string wkt; // projection information
+        ProjectionWrapper projRef;
 
         [[nodiscard]] int GetIndex(const int x, const int y) const { return y * sizeX + x; }
     };
@@ -47,9 +47,10 @@ namespace TrackMapper::Raster {
 
     std::vector<OSMPoint> getDatasetExtends(const GDALDatasetWrapper &dataset);
 
-    bool reprojectOSMPoints(std::vector<OSMPoint> &points, OGRSpatialReference &dstProjRef);
+    bool reprojectOSMPoints(std::vector<OSMPoint> &points, const ProjectionWrapper &dstProjRef);
 
-    bool reprojectPoints(std::vector<OSMPoint> &points, OGRSpatialReference &srcProjRef, OGRSpatialReference &dstProjRef);
+    bool reprojectPoints(std::vector<OSMPoint> &points, const ProjectionWrapper &srcProjRef,
+                         const ProjectionWrapper &dstProjRef);
 
     void interpolateHeightInGrid(const PointGrid &grid, Point &point);
 

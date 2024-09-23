@@ -6,7 +6,7 @@
 #include "gdal_wrapper.h"
 
 #include <array>
-#include <iostream>
+#include <cmath>
 
 namespace TrackMapper::Raster {
     PointGrid readRasterData(GDALDatasetWrapper &dataset) {
@@ -20,7 +20,7 @@ namespace TrackMapper::Raster {
         grid.sizeY = dataset.GetSizeY();
 
         grid.origin = {transform[0], 0, -transform[3]};
-        grid.wkt = dataset.GetProjectionRef().exportToWkt();
+        grid.projRef = dataset.GetProjectionRef();
 
         const std::vector<float> &values = dataset.GetData();
         grid.points.reserve(values.size());
@@ -55,8 +55,8 @@ namespace TrackMapper::Raster {
         return extends;
     }
 
-    bool reprojectOSMPoints(std::vector<OSMPoint> &points, OGRSpatialReference &dstProjRef) {
-        if (dstProjRef.Validate() != OGRERR_NONE)
+    bool reprojectOSMPoints(std::vector<OSMPoint> &points, const ProjectionWrapper &dstProjRef) {
+        if (!dstProjRef.IsValid())
             return false;
 
         const GDALReprojectionTransformer transformer(osmPointsProjRef, dstProjRef);
@@ -71,9 +71,12 @@ namespace TrackMapper::Raster {
 
         return true;
     }
-    bool reprojectPoints(std::vector<OSMPoint> &points, OGRSpatialReference &srcProjRef,
-                         OGRSpatialReference &dstProjRef) {
-        if (dstProjRef.Validate() != OGRERR_NONE)
+    bool reprojectPoints(std::vector<OSMPoint> &points, const ProjectionWrapper &srcProjRef,
+                         const ProjectionWrapper &dstProjRef) {
+        if (!srcProjRef.IsValid())
+            return false;
+
+        if (!dstProjRef.IsValid())
             return false;
 
         const GDALReprojectionTransformer transformer(srcProjRef, dstProjRef);

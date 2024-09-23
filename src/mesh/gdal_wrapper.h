@@ -10,13 +10,26 @@
 #include <string>
 #include <vector>
 
-#include <ogr_spatialref.h>
-
 namespace TrackMapper::Raster {
 
     using GeoTransform = std::array<double, 6>;
 
-    // TODO: re-add wrapper around OGRSpatialReference (problem: inconsistent behaviour when using for reprojection)
+    /// A wrapper around the OGRSpatialReference class
+    /// @note This just safes the wkt string for constructing an OGRSpatialReference because of wierd behaviour with the
+    /// class
+    class ProjectionWrapper {
+    public:
+        explicit ProjectionWrapper();
+        explicit ProjectionWrapper(std::string wkt);
+
+        [[nodiscard]] bool IsValid() const;
+
+        [[nodiscard]] std::string Get() const;
+
+    private:
+        std::string mWKT;
+        bool mValid = false;
+    };
 
     /// A wrapper around the GDALDatasetUniquePtr class
     class GDALDatasetWrapper {
@@ -27,7 +40,7 @@ namespace TrackMapper::Raster {
         explicit GDALDatasetWrapper(const std::string &filepath);
         ~GDALDatasetWrapper();
 
-        [[nodiscard]] bool isValid() const;
+        [[nodiscard]] bool IsValid() const;
 
         /**
          * @return GeoTransform containing tranformation information of the dataset
@@ -46,7 +59,7 @@ namespace TrackMapper::Raster {
          */
         const std::vector<float> &GetData();
 
-        [[nodiscard]] const OGRSpatialReference &GetProjectionRef() const;
+        [[nodiscard]] const ProjectionWrapper &GetProjectionRef() const;
 
     private:
         // opaque pointer to avoid including gdal headers
@@ -56,14 +69,14 @@ namespace TrackMapper::Raster {
         bool invalid;
 
         GeoTransform mTransform;
-        OGRSpatialReference mProjRef;
+        ProjectionWrapper mProjRef;
         std::vector<float> mData;
     };
 
     /// A wrapper around GDALCreateReprojectionTransformerEx class and GDALReprojectionTransform function
     class GDALReprojectionTransformer {
     public:
-        GDALReprojectionTransformer(OGRSpatialReference &srcProjRef, OGRSpatialReference &dstProjRef);
+        GDALReprojectionTransformer(const ProjectionWrapper &srcProjRef, const ProjectionWrapper &dstProjRef);
         ~GDALReprojectionTransformer();
 
         [[nodiscard]] bool Transform(double *x, double *y, double *z) const;

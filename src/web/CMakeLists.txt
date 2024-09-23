@@ -24,7 +24,7 @@ add_custom_command(TARGET TrackMapperServerLib POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_directory
         "${CMAKE_CURRENT_SOURCE_DIR}/static/"
         "$<TARGET_FILE_DIR:TrackMapperServerLib>/static/"
-        COMMENT "Copying static web files from ${CMAKE_CURRENT_SOURCE_DIR}/static/"
+        COMMENT "Copying static web files from ${CMAKE_CURRENT_SOURCE_DIR}/static/\n"
 )
 
 # copies proj lib data files post build needed right next to TrackMapperMeshLib - dirty hack
@@ -32,11 +32,11 @@ add_custom_command(TARGET TrackMapperServerLib POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_directory
         "$<TARGET_FILE_DIR:PROJ::proj>/..$<$<CONFIG:Debug>:/..>/share/proj"
         "$<TARGET_FILE_DIR:TrackMapperServerLib>/proj/"
-        COMMENT "Copying proj data from $<TARGET_FILE_DIR:PROJ::proj>/..$<$<CONFIG:Debug>:/..>/share/proj"
+        COMMENT "Copying proj data from $<TARGET_FILE_DIR:PROJ::proj>/..$<$<CONFIG:Debug>:/..>/share/proj\n"
 )
 
 
 add_executable(TrackMapperServerWebApp
         main.cpp
 )
-target_link_libraries(TrackMapperServerWebApp PRIVATE TrackMapperServerLib)
+target_link_libraries(TrackMapperServerWebApp PRIVATE TrackMapperServerLib TrackMapperSceneLib)

@@ -3,6 +3,7 @@
 //
 
 #include "interpolation.h"
+#include <cmath>
 
 namespace TrackMapper::Mesh {
 
