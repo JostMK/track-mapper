@@ -155,8 +155,10 @@ namespace TrackMapper::Web {
         // REQ: base64 encoded json obj containing data for track creation
         // RES: error msg if error happens
         CROW_ROUTE(pImpl->app, "/api/create_track/<string>")
-        ([&trackData, &mGraph = pImpl->mGraph](const std::string &base64JsonObj) {
+        ([&trackData, &mGraph = pImpl->mGraph, &pathfinding = pImpl->mPathfinding](const std::string &base64JsonObj) {
             const auto trackJson = crow::json::load(base64_decode(base64JsonObj));
+
+            trackData.SetProgress("Parsing Track Data");
 
             const std::string name = trackJson["name"].s();
             const std::string outPath = trackJson["output"].s();
@@ -179,18 +181,28 @@ namespace TrackMapper::Web {
             }
 
             trackData.paths.resize(pathsJson.size());
-            for (int i = 0; i < pathsJson.size(); ++i) {
-                const auto pathJson = pathsJson[i].lo();
-                trackData.paths[i].reserve(pathJson.size());
-                for (const auto &node: pathJson) {
-                    const auto nodeId = static_cast<int>(node.i()); // node id should not be bigger then int
-                    const auto [lat, lng] = mGraph.GetLocation(nodeId);
-                    trackData.paths[i].emplace_back(lat, lng);
+            for (int pathIdx = 0; pathIdx < pathsJson.size(); ++pathIdx) {
+                const auto pathJson = pathsJson[pathIdx].lo();
+
+                // add first node to path
+                auto prevNode = static_cast<int>(pathJson[0].i());
+                const auto [lat, lng] = mGraph.GetLocation(prevNode);
+                trackData.paths[pathIdx].emplace_back(lat, lng);
+
+                // querry shortest path for each segment and add all of its nodes
+                for (int segmentIdx = 1; segmentIdx < pathJson.size(); ++segmentIdx) {
+                    const auto curNode = static_cast<int>(pathJson[segmentIdx]);
+                    auto nodes = pathfinding.CalculatePath(prevNode, curNode).nodeIds;
+                    // skip first node to not add it twice from the previous segment
+                    for (int i = 1; i < nodes.size(); ++i) {
+                        const auto [lat, lng] = mGraph.GetLocation(nodes[i]);
+                        trackData.paths[pathIdx].emplace_back(lat, lng);
+                    }
+                    prevNode = curNode;
                 }
             }
 
             trackData.SetPopulated();
-            trackData.SetProgress("Submitting Track Data");
 
             crow::json::wvalue x;
             x["status"] = "ok";
@@ -215,8 +227,6 @@ namespace TrackMapper::Web {
         pImpl->runner = pImpl->app.port(18080).run_async();
     }
     void BasicWebApp::Stop() const { pImpl->app.stop(); }
-
-    void createTrack() {}
 
     // copied from https://stackoverflow.com/questions/180947/base64-decode-snippet-in-c
     std::string base64_decode(const std::string &in) {

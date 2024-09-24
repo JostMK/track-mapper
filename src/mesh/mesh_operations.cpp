@@ -34,6 +34,8 @@ namespace TrackMapper::Mesh {
 
         for (int y = 0; y < point_grid.sizeY - 1; ++y) {
             for (int x = 0; x < point_grid.sizeX - 1; ++x) {
+                // TODO: fix winding order based on origin top left (tiff) or bottom left (xyz)
+                // -> should be deducable based on transform info
                 // NOTE: to conform with ksEditor the winding order has to be clockwise
                 // NOTE: to conform with the coordinate system of fbx files the z axis is extending downwards when
                 // looked at from above and x extending to the right
@@ -49,10 +51,16 @@ namespace TrackMapper::Mesh {
         return mesh;
     }
 
+    /// @note path need at least 4 points
     /// @note subdivision has to be greater or equal to 2
     CGALMesh meshFromPath(const Path &path, const double width, const int subdivisions) {
         const int segmentCount = subdivisions - 1;
         const double segmentWidth = width / segmentCount;
+
+        if(path.points.size() < 4) {
+            // Todo: maybe log error / warning
+            return {};
+        }
 
         CGALMesh mesh;
         std::vector<CGALMesh::Vertex_index> vertex_indices;
