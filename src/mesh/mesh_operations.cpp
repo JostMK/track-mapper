@@ -34,17 +34,14 @@ namespace TrackMapper::Mesh {
 
         for (int y = 0; y < point_grid.sizeY - 1; ++y) {
             for (int x = 0; x < point_grid.sizeX - 1; ++x) {
-                // TODO: fix winding order based on origin top left (tiff) or bottom left (xyz)
-                // -> should be deducable based on transform info
-                // NOTE: to conform with ksEditor the winding order has to be clockwise
                 // NOTE: to conform with the coordinate system of fbx files the z axis is extending downwards when
                 // looked at from above and x extending to the right
                 const int indexTL = y * point_grid.sizeX + x;
                 const int indexTR = y * point_grid.sizeX + (x + 1);
                 const int indexBL = (y + 1) * point_grid.sizeX + x;
                 const int indexBR = (y + 1) * point_grid.sizeX + (x + 1);
-                mesh.add_face(vertex_indices[indexBL], vertex_indices[indexTL], vertex_indices[indexBR]);
-                mesh.add_face(vertex_indices[indexBR], vertex_indices[indexTL], vertex_indices[indexTR]);
+                mesh.add_face(vertex_indices[indexTL], vertex_indices[indexBL], vertex_indices[indexBR]);
+                mesh.add_face(vertex_indices[indexTR], vertex_indices[indexTL], vertex_indices[indexBR]);
             }
         }
 

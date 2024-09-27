@@ -26,22 +26,29 @@ namespace TrackMapper::Raster {
         Point operator+(const Point &other) const { return Point{x + other.x, y + other.y, z + other.z}; }
         Point operator-(const Point &other) const { return Point{x - other.x, y - other.y, z - other.z}; }
         Point operator*(const double factor) const { return Point{x * factor, y * factor, z * factor}; }
+        void operator+=(const Point &other) {
+            x += other.x;
+            y += other.y;
+            z += other.z;
+        }
+        void operator-=(const Point &other) {
+            x -= other.x;
+            y -= other.y;
+            z -= other.z;
+        }
 
         [[nodiscard]] double SqLength() const { return x * x + y * y + z * z; }
         [[nodiscard]] double Length() const { return sqrt(SqLength()); }
-
-        [[nodiscard]] Point Transform(const GeoTransform &t) const {
-            // see: https://gdal.org/en/latest/tutorials/geotransforms_tut.html [2024-09-24]
-            return {t[0] + t[1] * x - z * t[2], y, t[3] + t[4] * x - z * t[5]};
-        }
     };
     inline Point operator*(const double factor, const Point &point) {
         return Point{point.x * factor, point.y * factor, point.z * factor};
     }
 
     struct PointGrid {
+        // only supports non roateted/skewed rasters
         std::vector<Point> points;
         int sizeX, sizeY;
+        double pixelSizeX, pixelSizeY;
         Point origin;
         ProjectionWrapper projRef;
         GeoTransform transform;
@@ -59,6 +66,8 @@ namespace TrackMapper::Raster {
                          const ProjectionWrapper &dstProjRef);
 
     void interpolateHeightInGrid(const PointGrid &grid, Point &point);
+
+    Point getRasterPoint(const GeoTransform &transform, int pixelX, int pixelY, bool raw = false);
 
 } // namespace TrackMapper::Raster
 

@@ -10,32 +10,55 @@
 
 namespace TrackMapper::Raster {
     PointGrid readRasterData(GDALDatasetWrapper &dataset) {
-        // NOTE: to conform with the coordinate system of fbx files the z axis has to be inverted
-
-        // see: https://gdal.org/en/latest/tutorials/geotransforms_tut.html [2024-09-11]
         const GeoTransform &transform = dataset.GetGeoTransform();
+        // Todo: handle rotated or skewed raster images (transform[2] and transform[4] are non zero)
 
         PointGrid grid;
         grid.sizeX = dataset.GetSizeX();
         grid.sizeY = dataset.GetSizeY();
+        grid.pixelSizeX = transform[1];
+        grid.pixelSizeY = transform[5];
 
-        grid.origin = {transform[0], 0, -transform[3]};
+        // ensure that origin is always at the top left of the raster
+        const bool flippedZOrigin = grid.pixelSizeY > 0;
+
+        if (flippedZOrigin) {
+            grid.origin = getRasterPoint(transform, 0, grid.sizeY - 1);
+            grid.pixelSizeY *= -1;
+        } else {
+            grid.origin = getRasterPoint(transform, 0, 0);
+        }
+
         grid.projRef = dataset.GetProjectionRef();
         grid.transform = transform;
 
         const std::vector<float> &values = dataset.GetData();
         grid.points.reserve(values.size());
 
-        for (int z = 0; z < dataset.GetSizeY(); ++z) {
-            for (int x = 0; x < dataset.GetSizeX(); ++x) {
-                // see: https://gdal.org/tutorials/raster_api_tut.html#getting-dataset-information [2024-08-14]
-                grid.points.emplace_back(transform[1] * x - z * transform[2], values[grid.GetIndex(x, z)],
-                                         transform[4] * x - z * transform[5]);
+        if (flippedZOrigin) {
+            for (int z = 0; z < dataset.GetSizeY(); ++z) {
+                for (int x = 0; x < dataset.GetSizeX(); ++x) {
+                    const auto coordZ = dataset.GetSizeY() - 1 - z;
+                    auto p = getRasterPoint(transform, x, coordZ) - grid.origin;
+                    const auto height = values[grid.GetIndex(x, coordZ)];
+                    p.y = height;
+                    grid.points.push_back(p);
+                }
+            }
+        } else {
+            for (int z = 0; z < dataset.GetSizeY(); ++z) {
+                for (int x = 0; x < dataset.GetSizeX(); ++x) {
+                    auto p = getRasterPoint(transform, x, z) - grid.origin;
+                    const auto height = values[grid.GetIndex(x, z)];
+                    p.y = height;
+                    grid.points.push_back(p);
+                }
             }
         }
 
         return grid;
     }
+
     std::vector<OSMPoint> getDatasetExtends(const GDALDatasetWrapper &dataset) {
         // NOTE: this function does NOT conform with the inverted z coordinate system of fbx scenes
 
@@ -45,14 +68,18 @@ namespace TrackMapper::Raster {
         const int sizeY = dataset.GetSizeY();
 
         std::vector<OSMPoint> extends;
-        extends.emplace_back(transform[0] + transform[1] * 0 + 0 * transform[2],
-                             transform[3] + transform[4] * 0 + 0 * transform[5]); // (0,0)
-        extends.emplace_back(transform[0] + transform[1] * sizeX + 0 * transform[2],
-                             transform[3] + transform[4] * sizeX + 0 * transform[5]); // (sizeX,0)
-        extends.emplace_back(transform[0] + transform[1] * 0 + sizeY * transform[2],
-                             transform[3] + transform[4] * 0 + sizeY * transform[5]); // (0,sizeY)
-        extends.emplace_back(transform[0] + transform[1] * sizeX + sizeY * transform[2],
-                             transform[3] + transform[4] * sizeX + sizeY * transform[5]); // (sizeX,sizeY)
+        auto p = getRasterPoint(transform, 0, 0, true);
+        extends.emplace_back(p.x, p.z); // (0, 0)
+
+        p = getRasterPoint(transform, sizeX, 0, true);
+        extends.emplace_back(p.x, p.z); // (sizeX, 0)
+
+        p = getRasterPoint(transform, 0, sizeY, true);
+        extends.emplace_back(p.x, p.z); // (0, sizeY)
+
+        p = getRasterPoint(transform, sizeX, sizeY, true);
+        extends.emplace_back(p.x, p.z); // (sizeX, sizeY)
+
         return extends;
     }
 
@@ -99,6 +126,19 @@ namespace TrackMapper::Raster {
         const int yIndex = std::floor(-point.z / grid.transform[5]);
 
         point.y = grid.points[grid.GetIndex(xIndex, yIndex)].y;
+    }
+
+    Point getRasterPoint(const GeoTransform &transform, const int pixelX, const int pixelY, const bool raw) {
+        // NOTE: to conform with the coordinate system of fbx files the z axis has to be inverted
+        const double zSign = raw ? 1 : -1;
+
+        // see: https://gdal.org/en/latest/tutorials/geotransforms_tut.html [2024-09-11]
+        // see: https://gdal.org/tutorials/raster_api_tut.html#getting-dataset-information [2024-08-14
+        return {
+                transform[0] + transform[1] * pixelX + zSign * pixelY * transform[2], //
+                0, //
+                zSign * transform[3] + transform[4] * pixelX + zSign * pixelY * transform[5] //
+        };
     }
 
 } // namespace TrackMapper::Raster
