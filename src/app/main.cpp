@@ -162,7 +162,8 @@ void addRoad(Config &config) {
         TrackMapper::Raster::interpolateHeightInGrid(currentRaster, p);
 
         const auto [offsetX, offsetY, offsetZ] = config.origin - currentRaster.origin;
-        path.points.emplace_back(p.x - offsetX, p.y - offsetY, p.z - offsetZ);
+        path.points.emplace_back(p.x - offsetX, p.y - offsetY,
+                                 -p.z + offsetZ); // fbx coordinate system needs z mirroring
     }
 #endif
 
@@ -199,6 +200,7 @@ void writeOut(const Config &config) {
     std::cin >> outFilePath;
 
     config.scene.Export(outFilePath, true);
+    config.scene.Export(outFilePath.substr(0, outFilePath.size() - 4) + "-bin.fbx", false);
 
     std::cout << "File successfully written to:\n" << outFilePath << std::endl;
 }

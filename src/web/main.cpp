@@ -153,7 +153,7 @@ bool CreateTrack(TrackData &data) {
 
     // creating tiles
     for (int i = 0; i < data.rasterFiles.size(); ++i) {
-        const auto progress = std::format("Task 1/4: Creating tile {}/{}", i + 1, data.rasterFiles.size());
+        const auto progress = std::format("[Task 1/4] Creating Terrain: Tile {}/{}", i + 1, data.rasterFiles.size());
         std::cout << progress << std::endl;
         data.SetProgress(progress);
         creator.AddRaster(data.rasterFiles[i]);
@@ -161,7 +161,7 @@ bool CreateTrack(TrackData &data) {
 
     // creating roads
     for (int i = 0; i < data.paths.size(); ++i) {
-        const auto progress = std::format("Task 2/4: Creating path {}/{}", i + 1, data.paths.size());
+        const auto progress = std::format("[Task 2/4] Creating Roads: Path {}/{}", i + 1, data.paths.size());
         std::cout << progress << std::endl;
         data.SetProgress(progress);
         creator.AddRoad(data.paths[i], data.projRef);
@@ -171,7 +171,7 @@ bool CreateTrack(TrackData &data) {
     {
         using Point = TrackMapper::Raster::Point;
 
-        const auto progress = "Task 3/4: Setting spawn points";
+        const auto progress = "[Task 3/4] Setting spawn points";
         std::cout << progress << std::endl;
         data.SetProgress(progress);
 
@@ -183,7 +183,7 @@ bool CreateTrack(TrackData &data) {
 
     // exporting track
     {
-        const auto progress = "Task 4/4: Writing track to disk";
+        const auto progress = "[Task 4/4] Writing track to disk";
         std::cout << progress << std::endl;
         data.SetProgress(progress);
 

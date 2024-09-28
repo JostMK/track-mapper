@@ -19,14 +19,14 @@ namespace TrackMapper::Raster {
         grid.pixelSizeX = transform[1];
         grid.pixelSizeY = transform[5];
 
-        // ensure that origin is always at the top left of the raster
-        const bool flippedZOrigin = grid.pixelSizeY > 0;
+        // ensure that origin is always at the bottom left of the raster
+        const bool flippedZOrigin = grid.pixelSizeY < 0;
 
         if (flippedZOrigin) {
-            grid.origin = getRasterPoint(transform, 0, grid.sizeY - 1);
+            grid.origin = getRasterPoint(transform, 0, grid.sizeY - 1, true);
             grid.pixelSizeY *= -1;
         } else {
-            grid.origin = getRasterPoint(transform, 0, 0);
+            grid.origin = getRasterPoint(transform, 0, 0, true);
         }
 
         grid.projRef = dataset.GetProjectionRef();
@@ -36,19 +36,21 @@ namespace TrackMapper::Raster {
         grid.points.reserve(values.size());
 
         if (flippedZOrigin) {
+            const auto refPoint = getRasterPoint(transform, 0, grid.sizeY - 1);
             for (int z = 0; z < dataset.GetSizeY(); ++z) {
                 for (int x = 0; x < dataset.GetSizeX(); ++x) {
                     const auto coordZ = dataset.GetSizeY() - 1 - z;
-                    auto p = getRasterPoint(transform, x, coordZ) - grid.origin;
+                    auto p = getRasterPoint(transform, x, coordZ) - refPoint;
                     const auto height = values[grid.GetIndex(x, coordZ)];
                     p.y = height;
                     grid.points.push_back(p);
                 }
             }
         } else {
+            const auto refPoint = getRasterPoint(transform, 0, 0);
             for (int z = 0; z < dataset.GetSizeY(); ++z) {
                 for (int x = 0; x < dataset.GetSizeX(); ++x) {
-                    auto p = getRasterPoint(transform, x, z) - grid.origin;
+                    auto p = getRasterPoint(transform, x, z) - refPoint;
                     const auto height = values[grid.GetIndex(x, z)];
                     p.y = height;
                     grid.points.push_back(p);
@@ -84,21 +86,9 @@ namespace TrackMapper::Raster {
     }
 
     bool reprojectOSMPoints(std::vector<OSMPoint> &points, const ProjectionWrapper &dstProjRef) {
-        if (!dstProjRef.IsValid())
-            return false;
-
-        const GDALReprojectionTransformer transformer(osmPointsProjRef, dstProjRef);
-
-        for (auto &[lat, lng]: points) {
-            if (const bool success = transformer.Transform(&lat, &lng, nullptr); !success)
-                return false;
-
-            // Note: to conform with the coordinate system of fbx files the z axis has to be inverted
-            lng *= -1;
-        }
-
-        return true;
+        return reprojectPoints(points, osmPointsProjRef, dstProjRef);
     }
+
     bool reprojectPoints(std::vector<OSMPoint> &points, const ProjectionWrapper &srcProjRef,
                          const ProjectionWrapper &dstProjRef) {
         if (!srcProjRef.IsValid())
@@ -120,12 +110,19 @@ namespace TrackMapper::Raster {
     void interpolateHeightInGrid(const PointGrid &grid, Point &point) {
         // TODO: this can only handle north aligned transforms - not transforms with rotation or shearing
         // TODO: Add bilinear interpolation
-        const int xIndex = std::floor(point.x / grid.transform[1]);
-        // Note: to conform with the coordinate system of fbx files the z axis is inverted so for going back into raster
-        // space it needs to be inverted again
-        const int yIndex = std::floor(-point.z / grid.transform[5]);
 
-        point.y = grid.points[grid.GetIndex(xIndex, yIndex)].y;
+        const int xIndex = std::floor(point.x / grid.pixelSizeX);
+        const int yIndex = std::floor(point.z / grid.pixelSizeY);
+
+        const int index = grid.GetIndex(xIndex, yIndex);
+
+        if (index >= grid.points.size()) {
+            // Todo: better handle edge cases
+            point.y = 0;
+            return;
+        }
+
+        point.y = grid.points[index].y;
     }
 
     Point getRasterPoint(const GeoTransform &transform, const int pixelX, const int pixelY, const bool raw) {

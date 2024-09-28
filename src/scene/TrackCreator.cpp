@@ -79,7 +79,7 @@ namespace TrackMapper::Scene {
             Point3D p{x, 0, y};
             set_height_for_point(mGrids, p);
             auto [lX, lY, lZ] = p - mOrigin;
-            path.points.emplace_back(lX, lY, lZ);
+            path.points.emplace_back(lX, lY, -lZ); // Note: fbx coordinate system needs z mirroring
         }
 
         // create mesh from path
@@ -103,15 +103,17 @@ namespace TrackMapper::Scene {
         TrackMapper::Raster::reprojectOSMPoints(points, projRef);
 
         // calculate pit spawn position and direction
-        auto pit = Point3D{p0.lat, 0, p0.lng}; // height will be set in TrackCreator
+        auto pit = Point3D{p0.lat, 0, p0.lng};
         const auto [dirX, dirY, dirZ] = Point3D{p1.lat, 0, p1.lng} - pit;
 
         // get correct height for spawns
         set_height_for_point(mGrids, pit);
+        pit -= mOrigin;
 
         // add marker object to scene
-        mScene.AddSpawnPoint("AC_PIT_0", {pit.x, pit.y + 1, pit.z}, {dirX, dirY, dirZ});
-        mScene.AddSpawnPoint("AC_START_0", {pit.x, pit.y + 1, pit.z}, {dirX, dirY, dirZ});
+        // Note: fbx coordinate system needs z mirroring
+        mScene.AddSpawnPoint("AC_PIT_0", {pit.x, pit.y + 1, -pit.z}, {dirX, dirY, -dirZ});
+        mScene.AddSpawnPoint("AC_START_0", {pit.x, pit.y + 1, -pit.z}, {dirX, dirY, -dirZ});
     }
 
     void TrackCreator::Export(const std::string &directoryPath) const {
@@ -130,6 +132,9 @@ namespace TrackMapper::Scene {
         const std::filesystem::path trackFBX = dir / (mName + ".fbx");
         mScene.Export(trackFBX.string(), true);
 
+        const std::filesystem::path fullFBX = dir / (mName + "-raw.fbx");
+        mScene.Export(fullFBX.string(), false);
+
         // TODO: export raw version for further editing
     }
 
@@ -143,13 +148,17 @@ namespace TrackMapper::Scene {
             if (offsetIntoRaster.x < 0 || offsetIntoRaster.z < 0)
                 continue; // point is outside of raster
 
-            Point3D farCorner = Point3D{static_cast<double>(grid.sizeX), 0, static_cast<double>(grid.sizeY)}.Transform(
-                    grid.transform); // margin of one pixel because of floor
+            Point3D farCorner; // dependent on transform orientation
+            if (grid.transform[5] < 0) {
+                farCorner = Raster::getRasterPoint(grid.transform, grid.sizeX, -1, true);
+            } else {
+                farCorner = Raster::getRasterPoint(grid.transform, grid.sizeX, grid.sizeY, true);
+            }
 
-            // ReSharper disable once CppUseStructuredBinding
+            // offset to far corner
             // ReSharper disable once CppTooWideScopeInitStatement
-            const auto offsetFarCorner = point - farCorner;
-            if (offsetFarCorner.x >= 0 || offsetFarCorner.z >= 0)
+            const auto [offsetFCX, _, offsetFCZ] = point - farCorner;
+            if (offsetFCX >= 0 || offsetFCZ >= 0)
                 continue; // point is outside of raster
 
             Raster::interpolateHeightInGrid(grid, offsetIntoRaster);
