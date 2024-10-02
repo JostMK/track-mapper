@@ -13,7 +13,8 @@ namespace TrackMapper::Mesh {
     SceneMesh cgalToSceneMesh(const CGALMesh &mesh, const CGALPoint3 &origin) {
         const int vertCount = static_cast<int>(mesh.number_of_vertices()); // should not exceed 40k
         const int trisCount = static_cast<int>(mesh.number_of_faces()) * 3;
-        SceneMesh sceneMesh({origin.x(), origin.y(), origin.z()}, vertCount, trisCount);
+        // invert z axis to conform with fbx rigth handed coordinate system
+        SceneMesh sceneMesh({origin.x(), origin.y(), -origin.z()}, vertCount, trisCount);
 
         // add all vertices
         std::map<CGALMesh::Vertex_index, int> vertexMap;

@@ -27,7 +27,7 @@ add_custom_command(TARGET TrackMapperMeshLib POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_directory
         "$<TARGET_FILE_DIR:PROJ::proj>/..$<$<CONFIG:Debug>:/..>/share/proj"
         "$<TARGET_FILE_DIR:TrackMapperMeshLib>/proj/"
-        COMMENT "Copying proj data from $<TARGET_FILE_DIR:PROJ::proj>/..$<$<CONFIG:Debug>:/..>/share/proj"
+        COMMENT "Copying proj data from $<TARGET_FILE_DIR:PROJ::proj>/..$<$<CONFIG:Debug>:/..>/share/proj to $<TARGET_FILE_DIR:TrackMapperMeshLib>/proj/"
 )
 
 

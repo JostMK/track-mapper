@@ -4,12 +4,16 @@
 
 #include <iostream>
 
+#if INTERPOLATE
 #include "../mesh/interpolation.h"
+#endif
+#include "../mesh/gdal_wrapper.h"
 #include "../mesh/mesh_converter.h"
 #include "../mesh/mesh_operations.h"
 #include "../mesh/raster_reader.h"
 #include "../scene/TrackScene.h"
 
+using ProjectionWrapper = TrackMapper::Raster::ProjectionWrapper;
 using TrackScene = TrackMapper::Scene::TrackScene;
 using PointGrid = TrackMapper::Raster::PointGrid;
 using OSMPoint = TrackMapper::Raster::OSMPoint;
@@ -18,7 +22,7 @@ using Point3D = TrackMapper::Raster::Point;
 
 struct Config {
     TrackScene scene;
-    std::string wkt;
+    ProjectionWrapper projRef;
     Point3D origin{};
     bool originIsSet = false;
     bool markersAreSet = false;
@@ -29,7 +33,7 @@ struct Config {
 void addTerrain(Config &config);
 void addRoad(Config &config);
 void writeOut(const Config &config);
-OGRSpatialReference getValidSpatRef(Config &config);
+ProjectionWrapper getValidSpatRef(Config &config);
 std::vector<OSMPoint> readPathFromCSV(const std::string &filePath);
 
 int main() {
@@ -83,7 +87,7 @@ void addTerrain(Config &config) {
     std::cout << "Task 4/4: Adding mesh to scene" << std::endl;
     if (!config.originIsSet) {
         config.origin = pointGrid.origin;
-        config.wkt = pointGrid.wkt;
+        config.projRef = pointGrid.projRef;
         config.originIsSet = true;
     }
 
@@ -109,7 +113,7 @@ void addRoad(Config &config) {
     std::vector<OSMPoint> points = readPathFromCSV(inFilePath);
 
     std::cout << "Task 2/5: Reprojecting points into terrain" << std::endl;
-    OGRSpatialReference rasterSpatRef = getValidSpatRef(config);
+    auto rasterSpatRef = getValidSpatRef(config);
     TrackMapper::Raster::reprojectOSMPoints(points, rasterSpatRef);
 
 #if INTERPOLATE
@@ -158,7 +162,8 @@ void addRoad(Config &config) {
         TrackMapper::Raster::interpolateHeightInGrid(currentRaster, p);
 
         const auto [offsetX, offsetY, offsetZ] = config.origin - currentRaster.origin;
-        path.points.emplace_back(p.x - offsetX, p.y - offsetY, p.z - offsetZ);
+        path.points.emplace_back(p.x - offsetX, p.y - offsetY,
+                                 -p.z + offsetZ); // fbx coordinate system needs z mirroring
     }
 #endif
 
@@ -195,24 +200,22 @@ void writeOut(const Config &config) {
     std::cin >> outFilePath;
 
     config.scene.Export(outFilePath, true);
+    config.scene.Export(outFilePath.substr(0, outFilePath.size() - 4) + "-bin.fbx", false);
 
     std::cout << "File successfully written to:\n" << outFilePath << std::endl;
 }
 
-OGRSpatialReference getValidSpatRef(Config &config) {
-    OGRSpatialReference spatRef(config.wkt.c_str());
-
-    while (spatRef.Validate() != OGRERR_NONE) {
+ProjectionWrapper getValidSpatRef(Config &config) {
+    while (!config.projRef.IsValid()) {
         std::cout << "No valid projection reference could be determined!" << std::endl;
         std::cout << "Please specify projection reference manually by entering a valid OGC WKT:" << std::endl;
-        std::string inProjRef;
-        std::getline(std::cin >> std::ws, inProjRef);
+        std::string inWKT;
+        std::getline(std::cin >> std::ws, inWKT);
 
-        spatRef = OGRSpatialReference(inProjRef.c_str());
-        config.wkt = spatRef.exportToWkt();
+        config.projRef = ProjectionWrapper(inWKT);
     }
 
-    return spatRef;
+    return config.projRef;
 }
 
 std::vector<OSMPoint> readPathFromCSV(const std::string &filePath) {

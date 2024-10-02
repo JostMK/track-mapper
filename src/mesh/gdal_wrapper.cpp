@@ -6,8 +6,27 @@
 
 #include <gdal_alg.h>
 #include <gdal_priv.h>
+#include <ogr_spatialref.h>
+
+#include <utility>
 
 namespace TrackMapper::Raster {
+
+    // ----- ProjectionWrapper -----
+
+    ProjectionWrapper::ProjectionWrapper() = default;
+    ProjectionWrapper::ProjectionWrapper(std::string wkt) : mWKT(std::move(wkt)) {
+        const OGRSpatialReference spatRef(Get().c_str());
+        mValid = spatRef.Validate() == OGRERR_NONE;
+    }
+
+    std::string ProjectionWrapper::Get() const {
+        const auto copy = mWKT;
+        return copy;
+    }
+
+    bool ProjectionWrapper::IsValid() const { return mValid; }
+
 
     // ----- GDALDatasetWrapper -----
 
@@ -21,11 +40,16 @@ namespace TrackMapper::Raster {
         CPLSetConfigOption("PROJ_LIB", "./proj");
         GDALAllRegister();
 
-        // TODO: handle error with invalid filepath
         auto pDataset = GDALDatasetUniquePtr(GDALDataset::FromHandle(GDALOpen(filepath.c_str(), GA_ReadOnly)));
 
+        if (!pDataset) {
+            invalid = true;
+            return;
+        }
+        invalid = false;
+
         pDataset->GetGeoTransform(mTransform.data());
-        mProjRef = OGRSpatialReference(pDataset->GetProjectionRef());
+        mProjRef = ProjectionWrapper(pDataset->GetProjectionRef());
 
         // moving ownership of the dataset to impl struct
         pImpl = std::make_unique<impl>(std::move(pDataset));
@@ -34,16 +58,31 @@ namespace TrackMapper::Raster {
 
     GDALDatasetWrapper::~GDALDatasetWrapper() {
         // TODO: handle possible errors
-        pImpl->pDataset->Close();
+        if (!invalid)
+            pImpl->pDataset->Close();
     }
+    bool GDALDatasetWrapper::IsValid() const { return !invalid; }
 
     const GeoTransform &GDALDatasetWrapper::GetGeoTransform() const { return mTransform; }
 
-    int GDALDatasetWrapper::GetSizeX() const { return pImpl->pDataset->GetRasterBand(1)->GetXSize(); }
+    int GDALDatasetWrapper::GetSizeX() const {
+        if (invalid)
+            return 0;
 
-    int GDALDatasetWrapper::GetSizeY() const { return pImpl->pDataset->GetRasterBand(1)->GetYSize(); }
+        return pImpl->pDataset->GetRasterBand(1)->GetXSize();
+    }
+
+    int GDALDatasetWrapper::GetSizeY() const {
+        if (invalid)
+            return 0;
+
+        return pImpl->pDataset->GetRasterBand(1)->GetYSize();
+    }
 
     const std::vector<float> &GDALDatasetWrapper::GetData() {
+        if (invalid)
+            return mData; // will be empty
+
         if (!mData.empty())
             return mData;
 
@@ -62,7 +101,7 @@ namespace TrackMapper::Raster {
         return mData;
     }
 
-    const OGRSpatialReference &GDALDatasetWrapper::GetProjectionRef() const { return mProjRef; }
+    const ProjectionWrapper &GDALDatasetWrapper::GetProjectionRef() const { return mProjRef; }
 
 
     // ----- GDALReprojectionTransformer -----
@@ -73,11 +112,14 @@ namespace TrackMapper::Raster {
         explicit GDALDatasetWrapper::impl(void *transformer) : transformer(transformer) {}
     };
 
-    GDALReprojectionTransformer::GDALReprojectionTransformer(OGRSpatialReference &srcProjRef,
-                                                             OGRSpatialReference &dstProjRef) {
+    GDALReprojectionTransformer::GDALReprojectionTransformer(const ProjectionWrapper &srcProjRef,
+                                                             const ProjectionWrapper &dstProjRef) {
 
-        auto transformer = GDALCreateReprojectionTransformerEx(OGRSpatialReference::ToHandle(&srcProjRef),
-                                                               OGRSpatialReference::ToHandle(&dstProjRef), nullptr);
+        OGRSpatialReference srcProj(srcProjRef.Get().c_str());
+        OGRSpatialReference dstProj(dstProjRef.Get().c_str());
+
+        auto transformer = GDALCreateReprojectionTransformerEx(OGRSpatialReference::ToHandle(&srcProj),
+                                                               OGRSpatialReference::ToHandle(&dstProj), nullptr);
         pImpl = std::make_unique<impl>(transformer);
     }
 
