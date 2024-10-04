@@ -53,7 +53,10 @@ namespace TrackMapper::Scene {
         }
 
         const auto [x, y, z] = pointGrid.origin - mOrigin;
-        auto sceneMesh = TrackMapper::Mesh::cgalToSceneMesh(mesh, {x, y, z});
+        auto sceneMesh = TrackMapper::Mesh::cgalToSceneMesh(mesh, {x, y, z}, [&mesh](const int i) -> Scene::Double2 {
+            const auto point = mesh.point(static_cast<CGAL::SM_Vertex_index>(i));
+            return {point.x(), point.z()}; // projects texture from above with one full texture per square meter
+        });
 
         mScene.AddGrassMesh(sceneMesh);
         mGrids.push_back(pointGrid);
@@ -66,6 +69,8 @@ namespace TrackMapper::Scene {
                       << std::endl;
             return;
         }
+
+        constexpr int widthSubdivisionCount = 5;
 
         // TODO: add closed path detection
 
@@ -88,11 +93,17 @@ namespace TrackMapper::Scene {
         // TODO: modify terrain to be below road
         // TODO: give road a vertical profile
         // TODO: add grass mesh near road ("grass road")
-        const auto mesh = TrackMapper::Mesh::meshFromPath(path, 6, 5);
+        const auto mesh = TrackMapper::Mesh::meshFromPath(path, 6, widthSubdivisionCount);
 
         // adding mesh to scene
         // Todo: make path origin sit at first node
-        auto sceneMesh = TrackMapper::Mesh::cgalToSceneMesh(mesh, {0, 0, 0});
+        auto sceneMesh = TrackMapper::Mesh::cgalToSceneMesh(
+                mesh, {0, 0, 0}, [widthSubdivisionCount](const int i) -> Scene::Double2 {
+                    const double u = (i % widthSubdivisionCount) / static_cast<double>(widthSubdivisionCount - 1);
+                    // integer devision is intended
+                    const double v = i / widthSubdivisionCount; // NOLINT(*-integer-division)
+                    return {u, v}; // projects texture along path with one full texture per segment
+                });
         mScene.AddRoadMesh(sceneMesh);
     }
 
