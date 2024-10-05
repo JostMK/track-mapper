@@ -22,6 +22,9 @@ namespace TrackMapper::Raster {
     struct Point {
         double x, y, z;
 
+        Point() = default;
+        Point(double x, double y, double z);
+
         Point operator-() const { return Point{-x, -y, -z}; }
         Point operator+(const Point &other) const { return Point{x + other.x, y + other.y, z + other.z}; }
         Point operator-(const Point &other) const { return Point{x - other.x, y - other.y, z - other.z}; }
@@ -65,7 +68,9 @@ namespace TrackMapper::Raster {
     bool reprojectPoints(std::vector<OSMPoint> &points, const ProjectionWrapper &srcProjRef,
                          const ProjectionWrapper &dstProjRef);
 
-    void interpolateHeightInGrid(const PointGrid &grid, Point &point);
+    void SetHeightFromGrid(const PointGrid &grid, Point &point);
+
+    double GetHeightForPointInGrid(const PointGrid &grid, const Point &point);
 
     Point getRasterPoint(const GeoTransform &transform, int pixelX, int pixelY, bool raw = false);
 

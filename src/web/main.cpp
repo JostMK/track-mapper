@@ -164,7 +164,8 @@ bool CreateTrack(TrackData &data) {
         const auto progress = std::format("[Task 2/4] Creating Roads: Path {}/{}", i + 1, data.paths.size());
         std::cout << progress << std::endl;
         data.SetProgress(progress);
-        creator.AddRoad(data.paths[i], data.projRef);
+        // TODO: make width configurable
+        creator.AddRoad(data.paths[i], data.projRef, 6);
     }
 
     // creating spawn
