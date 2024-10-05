@@ -74,8 +74,6 @@ namespace TrackMapper::Scene {
             return;
         }
 
-        // TODO: add closed path detection
-
         // reprojecting points into raster space
         TrackMapper::Raster::reprojectOSMPoints(points, projRef);
 
@@ -88,14 +86,14 @@ namespace TrackMapper::Scene {
             rawPoints.push_back(p);
         }
 
-        auto samples = Mesh::subdivideCatmullRom(rawPoints, 4);
+        auto samples = Mesh::subdivideCatmullRomComplet(rawPoints, 4);
 
         // update height of interpolated points
         for (auto &p: samples) {
             mInterpolateHeightForPoint(p);
         }
 
-        samples = Mesh::interpolateCatmullRom(rawPoints, 0.5); // approx. 0.5m between vertices
+        samples = Mesh::interpolateCatmullRomComplet(rawPoints, 0.5); // approx. 0.5m between vertices
 
         // TODO: modify terrain to be below road
         // TODO: add grass mesh near road ("grass road")
