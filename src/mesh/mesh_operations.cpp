@@ -79,7 +79,8 @@ namespace TrackMapper::Mesh {
             // halfway vector calculations only work if the vectors are not collinear
             if (CGAL::collinear(p1, p2, p3)) {
                 const CGALVector3 v2 = p3 - p2;
-                nh = CGAL::cross_product(v2, CGALVector3(0, 1, 0));
+                const CGALVector3 h = CGAL::cross_product(v2, CGALVector3(0, 1, 0));
+                nh = h / std::sqrt(h.squared_length());
                 iterationSign = -1;
             } else {
                 const CGALVector3 v1 = p1 - p2;
