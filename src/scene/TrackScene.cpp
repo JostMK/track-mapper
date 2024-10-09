@@ -26,6 +26,10 @@ namespace TrackMapper::Scene {
         mesh.name = std::to_string(mPhysicsCounter) + "ROAD";
         mPhysicsCounter++;
 
+        // TODO: remove clipping workaround
+        // moves the road up by 0.2 meters to minimize clipping
+        mesh.origin.y += 0.2;
+
         mRoadMeshes.push_back(mesh);
     }
 

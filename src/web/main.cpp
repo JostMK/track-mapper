@@ -60,7 +60,12 @@ void TrackWebApp() {
             }
 
             std::cout << "Received data.. Creating Track.." << std::endl;
+            auto startTime = std::chrono::high_resolution_clock::now();
+
             success = CreateTrack(data);
+
+            auto endTime = std::chrono::high_resolution_clock::now();
+            auto creationTime = std::chrono::duration_cast<std::chrono::seconds>(endTime - startTime);
 
             if (!success) {
                 // resets track data to be set again by web app
@@ -70,10 +75,14 @@ void TrackWebApp() {
                 // TODO: possible deadlock
                 // -> if website sends new create_track request between SetError in CreateTrack and this line
                 data.UnSetPopulated();
+                continue;
             }
+
+            std::cout << "Created Track in " << creationTime << std::endl;
         }
 
         std::cout << "Finished Track!" << std::endl;
+
 
         // waits for user input before closing console app
         std::cout << "Press ENTER to close process" << std::endl;
