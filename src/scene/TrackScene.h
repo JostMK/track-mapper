@@ -21,9 +21,21 @@ namespace TrackMapper::Scene {
         };
     };
 
+    struct Double2 {
+        union {
+            struct {
+                double x, y;
+            };
+            struct {
+                double u, v;
+            };
+        };
+    };
+
     struct Vertex {
         Double3 position;
         Double3 normal;
+        Double2 uv;
     };
 
     struct SceneMesh {

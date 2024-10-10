@@ -10,7 +10,7 @@ namespace TrackMapper::Mesh {
 
     using SceneMesh = Scene::SceneMesh;
 
-    SceneMesh cgalToSceneMesh(const CGALMesh &mesh, const CGALPoint3 &origin) {
+    SceneMesh cgalToSceneMesh(const CGALMesh &mesh, const CGALPoint3 &origin, const std::function<Scene::Double2(int)>& uvEvaluator) {
         const int vertCount = static_cast<int>(mesh.number_of_vertices()); // should not exceed 40k
         const int trisCount = static_cast<int>(mesh.number_of_faces()) * 3;
         // invert z axis to conform with fbx rigth handed coordinate system
@@ -18,14 +18,17 @@ namespace TrackMapper::Mesh {
 
         // add all vertices
         std::map<CGALMesh::Vertex_index, int> vertexMap;
-        int vertexCount = 0;
+        int vertexIndex = 0;
         for (const auto vertex: mesh.vertices()) {
-            auto point = mesh.point(vertex);
-            vertexMap.insert(std::pair{vertex, vertexCount});
+            const auto point = mesh.point(vertex);
+            vertexMap.insert(std::pair{vertex, vertexIndex});
+
             Scene::Double3 position{point.x(), point.y(), point.z()};
-            auto normal = CGAL::Polygon_mesh_processing::compute_vertex_normal(vertex, mesh);
-            sceneMesh.vertices.emplace_back(position, Scene::Double3{normal.x(), normal.y(), normal.z()});
-            vertexCount++;
+            const auto normalCalc = CGAL::Polygon_mesh_processing::compute_vertex_normal(vertex, mesh);
+            Scene::Double3 normal{normalCalc.x(), normalCalc.y(), normalCalc.z()};
+
+            sceneMesh.vertices.emplace_back(position, normal, uvEvaluator(static_cast<int>(vertex)));
+            vertexIndex++;
         }
 
         // add all triangles

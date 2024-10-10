@@ -12,6 +12,10 @@
 
 #include "TrackScene.h"
 
+namespace TrackMapper::Mesh {
+    struct Path;
+}
+
 namespace TrackMapper::Scene {
 
     class TrackCreator {
@@ -21,7 +25,7 @@ namespace TrackMapper::Scene {
         void AddRaster(const std::string &filePath);
 
         /// @note Make sure to first add all rasters so the path can get the correct height data
-        void AddRoad(std::vector<Raster::OSMPoint> &points, const Raster::ProjectionWrapper &projRef);
+        void AddRoad(std::vector<Raster::OSMPoint> &points, const Raster::ProjectionWrapper &projRef, double width);
 
         /// Places Pit and Start spawn at p0 pointing towards p1
         /// @note Reprojects and adds the correct height to the position
@@ -35,6 +39,11 @@ namespace TrackMapper::Scene {
         std::vector<Raster::PointGrid> mGrids; // needed for path height data
         Raster::Point mOrigin{}; // overall 3D reference point
         bool mOriginSet = false;
+        Raster::PointGrid *pLastGrid; // caches last grid for faster height finding
+
+        void mAddRoad(const Mesh::Path &path, double width);
+        void mInterpolateHeightForPoint(Raster::Point &point);
+        void mSetHeightForPoint(Raster::Point &point);
     };
 
 } // namespace TrackMapper::Scene

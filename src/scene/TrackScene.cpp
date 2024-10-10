@@ -8,7 +8,7 @@
 
 namespace TrackMapper::Scene {
     void AddMeshToScene(const SceneMesh &mesh, FbxScene *pScene, FbxSurfacePhong *lMaterial);
-    FbxSurfacePhong *CreateMaterial(const std::string &name, const Double3 &color, FbxScene *pScene);
+    FbxSurfacePhong *CreateMaterial(const std::string &name, const std::string &texture, FbxScene *pScene);
 
     void TrackScene::AddGrassMesh(SceneMesh &mesh, const bool hasCollision) {
         if (hasCollision) {
@@ -26,6 +26,10 @@ namespace TrackMapper::Scene {
         mesh.name = std::to_string(mPhysicsCounter) + "ROAD";
         mPhysicsCounter++;
 
+        // TODO: remove clipping workaround
+        // moves the road up by 0.2 meters to minimize clipping
+        mesh.origin.y += 0.2;
+
         mRoadMeshes.push_back(mesh);
     }
 
@@ -39,21 +43,18 @@ namespace TrackMapper::Scene {
         auto *lScene = FbxScene::Create(lSdkManager, "ACTrack");
 
         // populate FBX scene
-        const auto grassMat = CreateMaterial("GrassMat", {.47f, .63f, .29f}, lScene);
+        const auto grassMat = CreateMaterial("GrassMat", "\\texture\\grass.png", lScene);
         for (const auto &mesh: mGrassMeshes) {
             AddMeshToScene(mesh, lScene, grassMat);
         }
 
-        const auto roadMat = CreateMaterial("RoadMat", {.28f, .31f, .34f}, lScene);
+        const auto roadMat = CreateMaterial("RoadMat", "\\texture\\road.png", lScene);
         for (const auto &mesh: mRoadMeshes) {
             AddMeshToScene(mesh, lScene, roadMat);
         }
 
-        // const auto nullMat = CreateMaterial("NULL", {0, 0, 0}, lScene);
-        // nullMat->TransparencyFactor.Set(1);
         for (const auto &mesh: mEmptyMeshes) {
             FbxNode *lNode = FbxNode::Create(lScene, mesh.name.c_str());
-            // lNode->AddMaterial(nullMat);
             lNode->LclTranslation.Set(FbxDouble3{mesh.origin.x, mesh.origin.y, mesh.origin.z});
 
             FbxVector4 angles;
@@ -94,7 +95,7 @@ namespace TrackMapper::Scene {
         lMesh->InitControlPoints(vertexCount);
         FbxVector4 *vertex = lMesh->GetControlPoints();
         for (int i = 0; i < vertexCount; ++i) {
-            const Double3 p = mesh.vertices[i].position;
+            const auto p = mesh.vertices[i].position;
             vertex[i] = FbxVector4{p.x, p.y, p.z};
         }
 
@@ -102,12 +103,18 @@ namespace TrackMapper::Scene {
         FbxGeometryElementNormal *lNormlElement = lMesh->CreateElementNormal();
         lNormlElement->SetMappingMode(FbxGeometryElement::eByControlPoint);
         lNormlElement->SetReferenceMode(FbxGeometryElement::eDirect);
-        // auto normal = lNormlElement->GetDirectArray();
-        // normal.Resize(vertexCount);
         for (int i = 0; i < vertexCount; ++i) {
-            const Double3 n = mesh.vertices[i].normal;
-            // vertex[i] = FbxVector4{n.x, n.y, n.z};
+            const auto n = mesh.vertices[i].normal;
             lNormlElement->GetDirectArray().Add(FbxVector4{n.x, n.y, n.z});
+        }
+
+        // specify UVs per control point.
+        FbxGeometryElementUV *lUVElement = lMesh->CreateElementUV("DiffuseUV");
+        lUVElement->SetMappingMode(FbxGeometryElement::eByControlPoint);
+        lUVElement->SetReferenceMode(FbxGeometryElement::eDirect);
+        for (int i = 0; i < vertexCount; ++i) {
+            const auto n = mesh.vertices[i].uv;
+            lUVElement->GetDirectArray().Add(FbxVector2{n.u, n.v});
         }
 
         // creating polygons
@@ -128,16 +135,25 @@ namespace TrackMapper::Scene {
         pScene->GetRootNode()->AddChild(lNode);
     }
 
-    FbxSurfacePhong *CreateMaterial(const std::string &name, const Double3 &color, FbxScene *pScene) {
+    FbxSurfacePhong *CreateMaterial(const std::string &name, const std::string &texture, FbxScene *pScene) {
         // creating material
+        // TODO: tweak values
         FbxSurfacePhong *lMaterial = FbxSurfacePhong::Create(pScene, name.c_str());
-        lMaterial->Emissive.Set({.0, .0, .0});
-        lMaterial->Ambient.Set({.0, .0, .0});
-        lMaterial->Diffuse.Set({color.x, color.y, color.z});
-        lMaterial->TransparencyFactor.Set(.0);
         lMaterial->ShadingModel.Set("Phong");
-        lMaterial->Shininess.Set(.0);
+        lMaterial->TransparencyFactor.Set(0);
+        lMaterial->Emissive.Set({0, 0, 0});
+        lMaterial->Ambient.Set({.1, .1, .1});
+        lMaterial->Diffuse.Set({1, 1, 1});
+        lMaterial->SpecularFactor.Set(0);
+        lMaterial->Shininess.Set(1);
 
+        FbxFileTexture *lTexture = FbxFileTexture::Create(pScene, texture.c_str());
+        lTexture->SetFileName(texture.c_str());
+        lTexture->SetTextureUse(FbxTexture::eStandard);
+        lTexture->SetMappingType(FbxTexture::eUV);
+        lTexture->SetMaterialUse(FbxFileTexture::eModelMaterial);
+
+        lMaterial->Diffuse.ConnectSrcObject(lTexture);
         return lMaterial;
     }
 } // namespace TrackMapper::Scene

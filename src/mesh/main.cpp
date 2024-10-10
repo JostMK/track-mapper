@@ -84,7 +84,7 @@ void createPath() {
     path.points.reserve(points.size());
     for (auto [x, y]: points) {
         TrackMapper::Raster::Point p{x - grid.origin.x, 0, y - grid.origin.z};
-        TrackMapper::Raster::interpolateHeightInGrid(grid, p);
+        TrackMapper::Raster::SetHeightFromGrid(grid, p);
         path.points.emplace_back(p.x, p.y, -p.z); // fbx coordinate system needs z mirroring
     }
 

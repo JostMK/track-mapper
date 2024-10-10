@@ -43,7 +43,7 @@ namespace TrackMapper::Web {
         pImpl->app.loglevel(crow::LogLevel::Info);
 #endif
 
-        // get closest node to mouse click endpoint
+        // get closest node to mouse click
         // REQ: latitude and longitude as double/double
         // RES: node id as json string
         CROW_ROUTE(pImpl->app, "/api/get_node/<double>/<double>")
@@ -55,9 +55,9 @@ namespace TrackMapper::Web {
             return x;
         });
 
-        // get closest node to mouse click endpoint
-        // REQ: latitude and longitude as double/double
-        // RES: node id as json string
+        // get position of node
+        // REQ: node id as int
+        // RES: latitude and longitude as json string
         CROW_ROUTE(pImpl->app, "/api/get_location/<int>")
         ([&mGraph = pImpl->mGraph](const int node_id) {
             auto [latitude, longitude] = mGraph.GetLocation(node_id);

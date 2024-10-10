@@ -9,9 +9,14 @@
 #include "raster_reader.h"
 
 namespace TrackMapper::Mesh {
+    std::vector<Raster::Point> interpolateCatmullRomComplet(const std::vector<Raster::Point> &points,
+                                                            double sampleDistance = 0.2, float alpha = .5f);
 
     std::vector<Raster::Point> interpolateCatmullRom(const std::vector<Raster::Point> &points,
                                                      double sampleDistance = 0.2, float alpha = .5f);
+
+    std::vector<Raster::Point> subdivideCatmullRomComplet(const std::vector<Raster::Point> &points,
+                                                          int pointsPerSegment = 4, float alpha = .5f);
 
     std::vector<Raster::Point> subdivideCatmullRom(const std::vector<Raster::Point> &points, int pointsPerSegment = 4,
                                                    float alpha = .5f);

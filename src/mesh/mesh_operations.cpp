@@ -54,7 +54,7 @@ namespace TrackMapper::Mesh {
         const int segmentCount = subdivisions - 1;
         const double segmentWidth = width / segmentCount;
 
-        if(path.points.size() < 4) {
+        if (path.points.size() < 4) {
             // Todo: maybe log error / warning
             return {};
         }
@@ -73,18 +73,28 @@ namespace TrackMapper::Mesh {
             const CGALPoint3 p1{path.points[i - 1].x(), 0, path.points[i - 1].z()};
             const CGALPoint3 p2{path.points[i].x(), 0, path.points[i].z()};
             const CGALPoint3 p3{path.points[i + 1].x(), 0, path.points[i + 1].z()};
-            const CGALVector3 v1 = p1 - p2;
-            const CGALVector3 v2 = p3 - p2;
 
-            const CGALVector3 n1 = v1 / std::sqrt(v1.squared_length());
-            const CGALVector3 n2 = v2 / std::sqrt(v2.squared_length());
-            const CGALVector3 h = n1 + n2;
-            const CGALVector3 nh = h / std::sqrt(h.squared_length());
+            CGALVector3 nh;
+            int iterationSign;
+            // halfway vector calculations only work if the vectors are not collinear
+            if (CGAL::collinear(p1, p2, p3)) {
+                const CGALVector3 v2 = p3 - p2;
+                const CGALVector3 h = CGAL::cross_product(v2, CGALVector3(0, 1, 0));
+                nh = h / std::sqrt(h.squared_length());
+                iterationSign = -1;
+            } else {
+                const CGALVector3 v1 = p1 - p2;
+                const CGALVector3 v2 = p3 - p2;
 
-            // tests if v2 points to the left of v1 relative to the horizontal plane
-            // flip order of adding vertices to assure the vertices to the left always gets pushed first
-            const int iterationSign =
-                    CGAL::scalar_product(CGAL::cross_product(v2, v1), CGALVector3(0, 1, 0)) > 0 ? 1 : -1;
+                const CGALVector3 n1 = v1 / std::sqrt(v1.squared_length());
+                const CGALVector3 n2 = v2 / std::sqrt(v2.squared_length());
+                const CGALVector3 h = n1 + n2;
+                nh = h / std::sqrt(h.squared_length());
+
+                // tests if v2 points to the left of v1 relative to the horizontal plane
+                // flip order of adding vertices to assure the vertices to the left always gets pushed first
+                iterationSign = CGAL::scalar_product(CGAL::cross_product(v2, v1), CGALVector3(0, 1, 0)) > 0 ? 1 : -1;
+            }
 
             // adds vertices from left to right
             for (auto j = 0; j < subdivisions; j++) {

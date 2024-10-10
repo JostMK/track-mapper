@@ -125,7 +125,7 @@ void addRoad(Config &config) {
         // TODO: determine the correct raster the point lies in
         const auto currentRaster = config.rasters[0];
         Point3D p{x - currentRaster.origin.x, 0, y - currentRaster.origin.z};
-        TrackMapper::Raster::interpolateHeightInGrid(currentRaster, p);
+        TrackMapper::Raster::SetHeightFromGrid(currentRaster, p);
         rawPoints.push_back(p);
     }
     auto samples = TrackMapper::Mesh::subdivideCatmullRom(rawPoints, 4);
@@ -134,7 +134,7 @@ void addRoad(Config &config) {
     for (auto &p: samples) {
         // TODO: determine the correct raster the point lies in
         const auto currentRaster = config.rasters[0];
-        TrackMapper::Raster::interpolateHeightInGrid(currentRaster, p);
+        TrackMapper::Raster::SetHeightFromGrid(currentRaster, p);
     }
 
     // interpolate for more mesh density and smoothing
@@ -159,7 +159,7 @@ void addRoad(Config &config) {
         // TODO: determine the correct raster the point lies in
         const auto currentRaster = config.rasters[0];
         Point3D p{x - currentRaster.origin.x, 0, y - currentRaster.origin.z};
-        TrackMapper::Raster::interpolateHeightInGrid(currentRaster, p);
+        TrackMapper::Raster::SetHeightFromGrid(currentRaster, p);
 
         const auto [offsetX, offsetY, offsetZ] = config.origin - currentRaster.origin;
         path.points.emplace_back(p.x - offsetX, p.y - offsetY,

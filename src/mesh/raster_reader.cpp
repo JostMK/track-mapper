@@ -9,6 +9,8 @@
 #include <cmath>
 
 namespace TrackMapper::Raster {
+    Point::Point(const double x, const double y, const double z) : x(x), y(y), z(z) {}
+
     PointGrid readRasterData(GDALDatasetWrapper &dataset) {
         const GeoTransform &transform = dataset.GetGeoTransform();
         // Todo: handle rotated or skewed raster images (transform[2] and transform[4] are non zero)
@@ -107,10 +109,10 @@ namespace TrackMapper::Raster {
         return true;
     }
 
-    void interpolateHeightInGrid(const PointGrid &grid, Point &point) {
-        // TODO: this can only handle north aligned transforms - not transforms with rotation or shearing
-        // TODO: Add bilinear interpolation
+    void SetHeightFromGrid(const PointGrid &grid, Point &point) { point.y = GetHeightForPointInGrid(grid, point); }
 
+    double GetHeightForPointInGrid(const PointGrid &grid, const Point &point) {
+        // TODO: this can only handle north aligned transforms - not transforms with rotation or shearing
         const int xIndex = std::floor(point.x / grid.pixelSizeX);
         const int yIndex = std::floor(point.z / grid.pixelSizeY);
 
@@ -118,11 +120,10 @@ namespace TrackMapper::Raster {
 
         if (index >= grid.points.size()) {
             // Todo: better handle edge cases
-            point.y = 0;
-            return;
+            return 0;
         }
 
-        point.y = grid.points[index].y;
+        return grid.points[index].y;
     }
 
     Point getRasterPoint(const GeoTransform &transform, const int pixelX, const int pixelY, const bool raw) {

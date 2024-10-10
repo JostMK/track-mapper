@@ -33,6 +33,24 @@ namespace TrackMapper::Mesh {
         return (t2 - t) / (t2 - t1) * B1 + (t - t1) / (t2 - t1) * B2;
     }
 
+    /// @note Adds a dummy point at the start and end of points array because catmull-rom only interpolates between p[1]
+    /// and p[n-1]
+    /// @note See interpolateCatmullRom for parameters
+    std::vector<Raster::Point> interpolateCatmullRomComplet(const std::vector<Raster::Point> &points,
+                                                            const double sampleDistance, const float alpha) {
+        std::vector<Raster::Point> modPoints;
+        modPoints.reserve(points.size() + 2);
+
+        const auto start = points[0] * 2 - points[1];
+        const auto end = points[points.size() - 1] * 2 - points[points.size() - 2];
+
+        modPoints.push_back(start);
+        modPoints.append_range(points);
+        modPoints.push_back(end);
+
+        return interpolateCatmullRom(modPoints, sampleDistance, alpha);
+    }
+
     /**
      * Interpolates approximately equally spaced points using a Catmull-Rom spline (CRS)
      * @param points waypoints to be interpolated between
@@ -76,6 +94,24 @@ namespace TrackMapper::Mesh {
         }
 
         return sampledPoints;
+    }
+
+    /// @note Adds a dummy point at the start and end of points array because catmull-rom only interpolates between p[1]
+    /// and p[n-1]
+    /// /// @note See subdivideCatmullRom for parameters
+    std::vector<Raster::Point> subdivideCatmullRomComplet(const std::vector<Raster::Point> &points,
+                                                          const int pointsPerSegment, const float alpha) {
+        std::vector<Raster::Point> modPoints;
+        modPoints.reserve(points.size() + 2);
+
+        const auto start = points[0] * 2 - points[1];
+        const auto end = points[points.size() - 1] * 2 - points[points.size() - 2];
+
+        modPoints.push_back(start);
+        modPoints.append_range(points);
+        modPoints.push_back(end);
+
+        return subdivideCatmullRom(modPoints, pointsPerSegment, alpha);
     }
 
     /**
