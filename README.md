@@ -37,8 +37,7 @@ After loading the supplied graph file, a website will be launched in the system 
 This is the web interface for creating tracks.
 
 > [!TIP] 
-> In case an error, with a message similar to 'missing projection reference' appears, while adding a raster file.
-> Then manually add a projection reference using the [ogc wkt](https://www.ogc.org/standard/wkt-crs/) format.
+> In case an error, with a message similar to 'missing projection reference' appears, while adding a raster file, please manually add a projection reference using the [ogc wkt](https://www.ogc.org/standard/wkt-crs/) format.
 > Those can be obtained for example from [EPSG.org](https://epsg.org/search/by-name).
 
 ## Structure

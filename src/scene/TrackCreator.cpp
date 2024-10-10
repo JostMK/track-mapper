@@ -99,6 +99,7 @@ namespace TrackMapper::Scene {
         // TODO: add grass mesh near road ("grass road")
 
         // slice path to uphold vertex count limit of 40k
+        // TODO: test for bug -> last segment way shorter then others
         const int widthSubdivisionCount = static_cast<int>(std::ceil(width * 2)) + 1; // approx. 0.5m between vertices
         const int vertexCount = static_cast<int>(widthSubdivisionCount * (samples.size() + 1));
         const double sliceCount = std::ceil(vertexCount / 40e3);
