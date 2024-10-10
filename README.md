@@ -2,83 +2,55 @@
 A tool for kick-starting the process of making [Assetto Corsa](https://assettocorsa.gg/assetto-corsa/) 
 maps based on real-world data.
 
-## Manual flow
-1. Create terrain mesh[^terrain_mesh]
-2. Trace road as path
-3. Project path onto terrain
-4. Extend grass mesh along path[^grass_mesh]
-5. Subtract terrain mesh by grass mesh
-6. Project outer part of grass mesh onto terrain
-7. Extend road mesh along path[^road_mesh]
-8. Fix self intersecting mesh
-9. Split meshes into acceptable sizes
-10. UV unwrap all meshes
-11. Name every mesh accordingly 
-12. Export fbx file
+## Building
 
-## App flow
-1. User starts app
-2. App starts web-interface
-3. User selects path from OSM in web-interface
-4. User uploads geo raster graphics in web-interface
-5. App creates terrain meshes[^terrain_mesh]
-6. App simplifies terrain mesh based on road proximity
-7. App merges all terrain meshes
-8. App creates grass mesh[^grass_mesh]
-9. App subtracts terrain mesh by grass mesh
-10. App projects grass mesh edge onto terrain mesh
-11. App creates road mesh without self intersections[^road_mesh][^research_needed]
-12. App adds artificial detail to road mesh[^research_needed]
-13. App splits meshes into acceptable sizes
-14. App assigns UVs[^research_needed]
-15. App names meshes accordingly
-16. App exports fbx file
+Following packages are needed:
+- [GDAL](https://gdal.org/en/latest/index.html)
+- [PROJ](https://proj.org/en/9.5/) *[should be included in GDAL]*
+- [CGAL](https://www.cgal.org/)
+- [Crow](https://crowcpp.org/master/)
+- [FBX SDK](https://aps.autodesk.com/developer/overview/fbx-sdk)
 
-## Todo
-- [ ] Data stage
-  - [ ] Webserver
-    - [x] Graph for roads
-    - [x] Dijkstra pathfinding for connecting waypoints
-    - [x] Create [Crow](https://crowcpp.org/master/) webserver
-    - [x] Front-end
-    - [x] FIX: cmake setup copying web files
-    - [ ] Start crow in extra thread
-    - [ ] Allow geo raster uploads
-    - [ ] Display geo raster outline on map[^research_needed]
-  - [ ] App
-    - [ ] Starts webserver
-    - [ ] Opens website in browser
-    - [ ] Stores all uploaded data (paths, geo files)
-- [ ] Mesh stage
-  - [ ] Terrain mesh generation[^terrain_mesh]
-    - [x] Read in raster data
-    - [x] Create terrain meshes
-    - [ ] Create heat maps for detail reduction based on road proximity[^research_needed]
-    - [ ] Simplify terrain meshes based on heat maps
-    - [ ] Merge terrain meshes
-    - [ ] Multi-thread for each raster
-    - [ ] Assign UVs[^research_needed]
-  - [ ] Road generation
-    - [ ] Project path onto terrain
-      - [ ] Find good sample distance[^research_needed]
-    - [ ] Grass mesh generation[^grass_mesh]
-      - [ ] Creates mesh along path without self intersections[^research_needed]
-      - [ ] Subtract grass mesh from terrain mesh
-      - [ ] Project edge of grass mesh onto terrain
-      - [ ] Assign UVs[^research_needed]
-    - [ ] Road mesh generation[^road_mesh]
-      - [ ] Creates mesh along path without self intersections[^research_needed]
-      - [ ] Add artificial detail to road
-      - [ ] Assign UVs[^research_needed]
-  - [ ] Exporting
-    - [ ] Split meshes two conform size restrictions
-    - [ ] Name meshes following KsEditor naming convention
-    - [ ] Export as FBX file[^research_needed]
+After installing them, configure cmake in the root directory and build the ``TrackMapperServerWebApp`` target.
 
-[^terrain_mesh]: Mesh without collision only for visuals in the background, based on geo data
+> [!IMPORTANT]
+> Make sure to set the cmake variable ``FBX_ROOT="path/to/fbx/sdk"`` when compiling ([details](./src/scene/README.md)).
 
-[^grass_mesh]: Mesh with collision directly next to the road, low detail
+> [!TIP]
+> After compiling make sure the ``static`` folder containing the [web files](./src/web/static) got copied right next to the executable.
+As well as the ``proj`` folder from the *PROJ* library containing runtime assets used by the library.
 
-[^road_mesh]: Mesh with collision representing the road, very detailed
+> [!NOTE] 
+> *Cmake should do this automatically however I am far from an expert in cmake so things sometimes don't work as intended*
 
-[^research_needed]: This feature still needs some research into feasibility
+## Running
+
+After building the project one can start the app by launching the compiled executable.
+
+The app will prompt for the path to a ``.fmi`` file.
+Those can be created using the [OsmGraphCreator](https://github.com/fmi-alg/OsmGraphCreator) on ``.osm.pbf`` files, that can be obtained from [Geofabrik](https://download.geofabrik.de/).
+
+> [!TIP]
+> Clicking on the name of a region on the [Geofabrik](https://download.geofabrik.de/) website shows all the subregions. This allows to only download files for specific local regions, which reduces the file size significantly.
+
+After loading the supplied graph file, a website will be launched in the system defined default browser.
+This is the web interface for creating tracks.
+
+> [!TIP] 
+> In case an error, with a message similar to 'missing projection reference' appears, while adding a raster file.
+> Then manually add a projection reference using the [ogc wkt](https://www.ogc.org/standard/wkt-crs/) format.
+> Those can be obtained for example from [EPSG.org](https://epsg.org/search/by-name).
+
+## Structure
+
+- [data](./data) - For storing example data files
+- [experiments](./experiments) - Contains small projects each dedicated to exploring one topic
+- [src](./src) - Contains the modules of the project
+  - [app](./src/app) - A console application for creating simple tracks
+  - [graph](./src/graph) - Holds functionality for node querying and pathfinding on road graphs
+  - [mesh](./src/mesh) - Holds functionality for creating and modifying meshes
+  - [scene](./src/scene) - Holds functionality for creating and exporting tracks as fbx files
+  - [web](./src/web) - Holds functionality for deploying a web interface
+    - [static](./src/web/static) - Contains the static files for the web interface
+
+
