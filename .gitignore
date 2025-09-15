@@ -34,6 +34,9 @@
 # CMake build folder
 /build
 
+# Vcpkg folder
+/vcpkg
+
 # CLion IDE config
 /.idea
 
