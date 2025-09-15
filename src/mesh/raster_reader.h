@@ -48,7 +48,7 @@ namespace TrackMapper::Raster {
     }
 
     struct PointGrid {
-        // only supports non roateted/skewed rasters
+        // only supports non rotated/skewed rasters
         std::vector<Point> points;
         int sizeX, sizeY;
         double pixelSizeX, pixelSizeY;

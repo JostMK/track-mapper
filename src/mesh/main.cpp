@@ -105,6 +105,18 @@ void createMesh() {
     std::string inFilePath;
     std::cin >> inFilePath;
 
+    std::cout << "\nSpecify file output path: (.off .obj .stl .ply .ts .vtp)" << std::endl;
+    std::string outFilePath;
+    std::cin >> outFilePath;
+
+    bool split_mesh;
+    {
+        std::cout << "Split mesh? (y): " << std::endl;
+        std::string shouldSplit;
+        std::cin >> shouldSplit;
+        split_mesh = shouldSplit.starts_with('y');
+    }
+
     // ReSharper disable CppJoinDeclarationAndAssignment
     std::chrono::steady_clock::time_point start_time;
     std::chrono::steady_clock::time_point end_time;
@@ -120,43 +132,73 @@ void createMesh() {
               << std::endl;
     std::cout << "Size: x: " << data.sizeX << " y: " << data.sizeY << " Points: " << data.points.size() << std::endl;
 
+    if (split_mesh) {
+        constexpr int MAX_CHUNK_VERTEX_COUNT = 40000;
+        const int vertex_count = dataset.GetSizeX() * dataset.GetSizeY();
+        const int chunk_count = vertex_count / MAX_CHUNK_VERTEX_COUNT + 1;
+        const int vertex_per_chunk_side =
+                static_cast<int>(std::ceil(std::sqrt(vertex_count / static_cast<double>(chunk_count))));
+        const int chunk_count_x = dataset.GetSizeX() / vertex_per_chunk_side + 1;
+        const int chunk_count_y = dataset.GetSizeY() / vertex_per_chunk_side + 1;
 
-    std::cout << "Creating mesh.." << std::endl;
-    start_time = std::chrono::steady_clock::now();
+        std::cout << "Splitting into " << chunk_count << " chunks" << std::endl;
 
-    auto mesh = TrackMapper::Mesh::meshFromRasterData(data);
+        std::vector<TrackMapper::Raster::PointGrid> chunks;
+        chunks.resize(chunk_count_x * chunk_count_y);
 
-    end_time = std::chrono::steady_clock::now();
-    std::cout << "..in " << std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count() << "ms"
-              << std::endl;
-    std::cout << "Vertices: " << mesh.number_of_vertices() << " Edges: " << mesh.number_of_edges()
-              << " Faces: " << mesh.number_of_faces() << std::endl;
+        for (int cY = 0; cY < chunk_count_y; ++cY) {
+            for (int cX = 0; cX < chunk_count_x; ++cX) {
+                auto &[points, sizeX, sizeY, pixelSizeX, pixelSizeY, origin, projRef, transform] =
+                        chunks[cY * chunk_count_x + cX];
 
-    std::cout << "Simplify mesh? (y): " << std::endl;
-    std::string shouldSimplify;
-    std::cin >> shouldSimplify;
+                sizeX = cX == chunk_count_x - 1 ? data.sizeX % vertex_per_chunk_side : vertex_per_chunk_side + 1;
+                sizeY = cY == chunk_count_y - 1 ? data.sizeY % vertex_per_chunk_side : vertex_per_chunk_side + 1;
+                pixelSizeX = data.pixelSizeX;
+                pixelSizeY = data.pixelSizeY;
+                origin = data.origin + TrackMapper::Raster::Point{cX * vertex_per_chunk_side * pixelSizeX, 0,
+                                                                  cY * vertex_per_chunk_side * pixelSizeY};
+                transform = data.transform;
+                projRef = data.projRef;
 
-    if (shouldSimplify.starts_with('y')) {
-        std::cout << "Reduction ratio: " << std::endl;
-        double reductionRation;
-        std::cin >> reductionRation;
+                points.resize(sizeX * sizeY);
+                for (int pY = 0; pY < sizeY; ++pY) {
+                    for (int pX = 0; pX < sizeX; ++pX) {
+                        points[pY * sizeX + pX] = data.points[(cY * vertex_per_chunk_side + pY) * data.sizeX +
+                                                              cX * vertex_per_chunk_side + pX];
+                    }
+                }
+            }
+        }
 
-        std::cout << "Simplifying mesh.." << std::endl;
+        std::string out_path_prefix = outFilePath.substr(0, outFilePath.size() - 4).append("-");
+        std::string out_path_suffix = outFilePath.substr(outFilePath.size() - 4);
+        int index = 1;
+        for (const auto &chunk: chunks) {
+            std::cout << "Creating chunk " << index << std::endl;
+            start_time = std::chrono::steady_clock::now();
+
+            auto mesh = TrackMapper::Mesh::meshFromRasterData(chunk);
+
+            end_time = std::chrono::steady_clock::now();
+            std::cout << "..in " << std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count()
+                      << "ms" << std::endl;
+
+            TrackMapper::Mesh::writeMeshToFile(mesh, out_path_prefix + std::to_string(index).append(out_path_suffix));
+            ++index;
+        }
+    } else {
+        std::cout << "Creating mesh.." << std::endl;
         start_time = std::chrono::steady_clock::now();
 
-        const int edgesRemoved = TrackMapper::Mesh::reduceMesh(mesh, reductionRation);
+        auto mesh = TrackMapper::Mesh::meshFromRasterData(data);
 
         end_time = std::chrono::steady_clock::now();
         std::cout << "..in " << std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count()
                   << "ms" << std::endl;
         std::cout << "Vertices: " << mesh.number_of_vertices() << " Edges: " << mesh.number_of_edges()
                   << " Faces: " << mesh.number_of_faces() << std::endl;
-        std::cout << "Edges removed: " << edgesRemoved << std::endl;
+
+        std::cout << "Writing mesh to disk.." << std::endl;
+        TrackMapper::Mesh::writeMeshToFile(mesh, outFilePath);
     }
-
-    std::cout << "\nSpecify file output path: (.off .obj .stl .ply .ts .vtp)" << std::endl;
-    std::string outFilePath;
-    std::cin >> outFilePath;
-
-    TrackMapper::Mesh::writeMeshToFile(mesh, outFilePath);
 }

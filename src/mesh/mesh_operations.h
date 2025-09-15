@@ -20,9 +20,9 @@ namespace TrackMapper::Mesh {
         std::vector<CGALPoint3> points;
     };
 
-    CGALMesh meshFromRasterData(const Raster::PointGrid &point_grid);
+    [[nodiscard]] CGALMesh meshFromRasterData(const Raster::PointGrid &point_grid);
 
-    CGALMesh meshFromPath(const Path &path, double width, int subdivisions);
+    [[nodiscard]] CGALMesh meshFromPath(const Path &path, double width, int subdivisions);
 
     int reduceMesh(CGALMesh &mesh, double reduction_ratio);
 
