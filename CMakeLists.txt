@@ -9,4 +9,7 @@ add_subdirectory(src/mesh)
 add_subdirectory(src/scene)
 add_subdirectory(src/web)
 
+add_subdirectory(src/libscene)
+add_subdirectory(src/libtile)
+
 add_subdirectory(experiments)
