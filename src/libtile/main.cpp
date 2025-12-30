@@ -98,11 +98,45 @@ bool create_mesh_from_file(const std::string &inFilepath, const std::string &out
     return true;
 }
 
+void normalize_tile_data(LibTile::GeoTile &tile);
+
 // namespace LibScene
 int main(int argc, char **argv) {
-    create_mesh_from_file(R"(C:\Users\Jost\Downloads\dgm025_32_529_5376_2_bw\dgm025_32_529_5376_2_bw\dgm025_32_529_5376_1_bw_2017.tif)", "Mesh1.obj");
+
+    LibTile::GeoTile tile = {
+        "", //
+        {0, -1, 0, 0, 0, 1}, //
+        5, //
+        5, //
+        {11, 12, 13, 14, 15, 21, 22, 23, 24, 25, 31, 32, 33, 34, 35, 41, 42, 43, 44, 45, 51, 52, 53 ,54, 55} //
+    };
+
+    normalize_tile_data(tile);
+
+    std::cout << "Transform: ";
+    for (const auto h: tile.geo_transform.values) {
+        std::cout << h << " ";
+    }
     std::cout << std::endl;
-    create_mesh_from_file(R"(D:\Documents\GitHub\track-mapper\data\raster-file\road-creation-test\mv\dgm1_33_320_5984_2_gtiff.tif)", "Mesh2.obj");
+
+    std::cout << "Height: ";
+    for (const auto h: tile.height) {
+        std::cout << h << " ";
+    }
     std::cout << std::endl;
-    create_mesh_from_file(R"(D:\Documents\GitHub\track-mapper\data\raster-file\road-creation-test\bw\dgm1_32_529_5376_1_bw_2017.xyz)", "Mesh3.obj");
+
+    return 0;
+
+    // create_mesh_from_file(R"(C:\Users\Jost\Downloads\dgm025_32_529_5376_2_bw\dgm025_32_529_5376_2_bw\dgm025_32_529_5376_1_bw_2017.tif)",
+    // "Mesh1.obj");
+    std::cout << std::endl;
+
+    create_mesh_from_file(
+            R"(D:\Documents\GitHub\track-mapper\data\raster-file\road-creation-test\mv\dgm1_33_320_5984_2_gtiff.tif)",
+            "Mesh2.obj");
+    std::cout << std::endl;
+
+    create_mesh_from_file(
+            R"(D:\Documents\GitHub\track-mapper\data\raster-file\road-creation-test\bw\dgm1_32_529_5376_1_bw_2017.xyz)",
+            "Mesh3.obj");
 }

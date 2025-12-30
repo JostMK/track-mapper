@@ -55,12 +55,12 @@ namespace LibTile {
     };
 
     enum Error {
-       FAILED_TO_OPEN_DATASET,
-       FAILED_TO_GET_GEO_TRANSFORM,
-       FAILED_TO_READ_DATA,
+        FAILED_TO_OPEN_DATASET,
+        FAILED_TO_GET_GEO_TRANSFORM,
+        FAILED_TO_READ_DATA,
     };
 
-    std::expected<GeoTile, Error> load_from_file(const std::string& filepath);
+    std::expected<GeoTile, Error> load_from_file(const std::string &filepath, bool normalize_direction = false);
 } // namespace LibTile
 
 #endif // GEOTILE_H

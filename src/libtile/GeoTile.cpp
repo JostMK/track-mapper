@@ -7,7 +7,42 @@
 #include <gdal_alg.h>
 #include <gdal_priv.h>
 
-std::expected<LibTile::GeoTile, LibTile::Error> LibTile::load_from_file(const std::string &filepath) {
+void normalize_tile_data(LibTile::GeoTile &tile) {
+    if (tile.geo_transform.x_scale < 0) {
+        tile.geo_transform.x_origin += tile.size_x * tile.geo_transform.x_scale;
+        tile.geo_transform.x_scale *= -1;
+
+        // reverse data in x direction
+        for (int y = 0; y < tile.size_y; y++) {
+            int start = y * tile.size_x;
+            int end = (y + 1) * tile.size_x - 1;
+            for (int x = 0; x < tile.size_x / 2; x++) {
+                std::swap(tile.height[start], tile.height[end]);
+                start += 1;
+                end -= 1;
+            }
+        }
+    }
+
+    if (tile.geo_transform.y_scale > 0) {
+        tile.geo_transform.y_origin += tile.size_y * tile.geo_transform.y_scale;
+        tile.geo_transform.y_scale *= -1;
+
+        // reverse data in y direction
+        for (int x = 0; x < tile.size_x; x++) {
+            int start = x;
+            int end = static_cast<int>(tile.height.size()) - tile.size_x + x;
+            for (int y = 0; y < tile.size_y / 2; y++) {
+                std::swap(tile.height[start], tile.height[end]);
+                start += tile.size_x;
+                end -= tile.size_x;
+            }
+        }
+    }
+}
+
+std::expected<LibTile::GeoTile, LibTile::Error> LibTile::load_from_file(const std::string &filepath,
+                                                                        const bool normalize_direction) {
     static bool gdal_configured = false;
     if (!gdal_configured) {
         CPLSetConfigOption("PROJ_LIB", "./proj");
