@@ -24,7 +24,9 @@ LibScene::Mesh create_mesh_from_tile(const LibTile::GeoTile &tile) {
             const int index = y * tile.size_x + x;
             double height = tile.height[index];
 
-            vertices.emplace_back(transform_x, height, transform_y);
+            // note: flip z axis because the image real world coordinates grow towards nord (upwards in the image)
+            //       the image coordinates however grow downwards which is mapped onto the z axis.
+            vertices.emplace_back(transform_x, height, -transform_y);
         }
     }
 
@@ -40,7 +42,7 @@ LibScene::Mesh create_mesh_from_tile(const LibTile::GeoTile &tile) {
         }
     }
 
-    return {origin, std::move(vertices), std::move(faces)};
+    return {{origin.x, 0, -origin.z}, std::move(vertices), std::move(faces)};
 }
 
 bool create_mesh_from_file(const std::string &inFilepath, const std::string &outFilepath) {
@@ -70,7 +72,7 @@ bool create_mesh_from_file(const std::string &inFilepath, const std::string &out
 
     std::cout << "Tile size: " << tile.size_x << " x " << tile.size_y << std::endl;
     std::cout << "Tile proj: " << tile.proj_wkt << std::endl;
-
+    std::cout << std::endl;
 
     std::cout << "> Creating mesh.." << std::endl;
 
@@ -78,7 +80,8 @@ bool create_mesh_from_file(const std::string &inFilepath, const std::string &out
 
     std::cout << "Vertex count: " << mesh.vertices.size() << std::endl;
     std::cout << "Face count: " << mesh.faces.size() << std::endl;
-
+    std::cout << "Origin: " << mesh.origin.x << " : " << mesh.origin.y << " : " << mesh.origin.z << std::endl;
+    std::cout << std::endl;
 
     std::cout << "> Exporting mesh.." << std::endl;
 
@@ -98,39 +101,8 @@ bool create_mesh_from_file(const std::string &inFilepath, const std::string &out
     return true;
 }
 
-void normalize_tile_data(LibTile::GeoTile &tile);
-
 // namespace LibScene
 int main(int argc, char **argv) {
-
-    LibTile::GeoTile tile = {
-        "", //
-        {0, -1, 0, 0, 0, 1}, //
-        5, //
-        5, //
-        {11, 12, 13, 14, 15, 21, 22, 23, 24, 25, 31, 32, 33, 34, 35, 41, 42, 43, 44, 45, 51, 52, 53 ,54, 55} //
-    };
-
-    normalize_tile_data(tile);
-
-    std::cout << "Transform: ";
-    for (const auto h: tile.geo_transform.values) {
-        std::cout << h << " ";
-    }
-    std::cout << std::endl;
-
-    std::cout << "Height: ";
-    for (const auto h: tile.height) {
-        std::cout << h << " ";
-    }
-    std::cout << std::endl;
-
-    return 0;
-
-    // create_mesh_from_file(R"(C:\Users\Jost\Downloads\dgm025_32_529_5376_2_bw\dgm025_32_529_5376_2_bw\dgm025_32_529_5376_1_bw_2017.tif)",
-    // "Mesh1.obj");
-    std::cout << std::endl;
-
     create_mesh_from_file(
             R"(D:\Documents\GitHub\track-mapper\data\raster-file\road-creation-test\mv\dgm1_33_320_5984_2_gtiff.tif)",
             "Mesh2.obj");

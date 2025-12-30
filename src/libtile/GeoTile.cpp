@@ -7,80 +7,86 @@
 #include <gdal_alg.h>
 #include <gdal_priv.h>
 
-void normalize_tile_data(LibTile::GeoTile &tile) {
-    if (tile.geo_transform.x_scale < 0) {
-        tile.geo_transform.x_origin += tile.size_x * tile.geo_transform.x_scale;
-        tile.geo_transform.x_scale *= -1;
+namespace LibTile {
+    void normalize_tile_data(GeoTile &tile) {
+        if (tile.geo_transform.x_scale < 0) {
+            tile.geo_transform.x_origin += tile.size_x * tile.geo_transform.x_scale;
+            tile.geo_transform.x_scale *= -1;
 
-        // reverse data in x direction
-        for (int y = 0; y < tile.size_y; y++) {
-            int start = y * tile.size_x;
-            int end = (y + 1) * tile.size_x - 1;
-            for (int x = 0; x < tile.size_x / 2; x++) {
-                std::swap(tile.height[start], tile.height[end]);
-                start += 1;
-                end -= 1;
+            // reverse data in x direction
+            for (int y = 0; y < tile.size_y; y++) {
+                int start = y * tile.size_x;
+                int end = (y + 1) * tile.size_x - 1;
+                for (int x = 0; x < tile.size_x / 2; x++) {
+                    std::swap(tile.height[start], tile.height[end]);
+                    start += 1;
+                    end -= 1;
+                }
+            }
+        }
+
+        if (tile.geo_transform.y_scale > 0) {
+            tile.geo_transform.y_origin += tile.size_y * tile.geo_transform.y_scale;
+            tile.geo_transform.y_scale *= -1;
+
+            // reverse data in y direction
+            for (int x = 0; x < tile.size_x; x++) {
+                int start = x;
+                int end = static_cast<int>(tile.height.size()) - tile.size_x + x;
+                for (int y = 0; y < tile.size_y / 2; y++) {
+                    std::swap(tile.height[start], tile.height[end]);
+                    start += tile.size_x;
+                    end -= tile.size_x;
+                }
             }
         }
     }
 
-    if (tile.geo_transform.y_scale > 0) {
-        tile.geo_transform.y_origin += tile.size_y * tile.geo_transform.y_scale;
-        tile.geo_transform.y_scale *= -1;
+    std::expected<GeoTile, Error> load_from_file(const std::string &filepath, const bool normalize_direction) {
+        static bool gdal_configured = false;
+        if (!gdal_configured) {
+            CPLSetConfigOption("PROJ_LIB", "./proj");
+            GDALAllRegister();
 
-        // reverse data in y direction
-        for (int x = 0; x < tile.size_x; x++) {
-            int start = x;
-            int end = static_cast<int>(tile.height.size()) - tile.size_x + x;
-            for (int y = 0; y < tile.size_y / 2; y++) {
-                std::swap(tile.height[start], tile.height[end]);
-                start += tile.size_x;
-                end -= tile.size_x;
-            }
+            gdal_configured = true;
         }
-    }
-}
 
-std::expected<LibTile::GeoTile, LibTile::Error> LibTile::load_from_file(const std::string &filepath,
-                                                                        const bool normalize_direction) {
-    static bool gdal_configured = false;
-    if (!gdal_configured) {
-        CPLSetConfigOption("PROJ_LIB", "./proj");
-        GDALAllRegister();
+        const auto pDataset = GDALDatasetUniquePtr(GDALDataset::FromHandle(GDALOpen(filepath.c_str(), GA_ReadOnly)));
 
-        gdal_configured = true;
-    }
+        if (!pDataset) {
+            return std::unexpected(Error::FAILED_TO_OPEN_DATASET);
+        }
 
-    const auto pDataset = GDALDatasetUniquePtr(GDALDataset::FromHandle(GDALOpen(filepath.c_str(), GA_ReadOnly)));
+        GeoTile tile;
 
-    if (!pDataset) {
-        return std::unexpected(Error::FAILED_TO_OPEN_DATASET);
-    }
+        tile.proj_wkt = pDataset->GetProjectionRef();
 
-    GeoTile tile;
+        if (const auto error = pDataset->GetGeoTransform(tile.geo_transform.values.data()); error != CPLE_None) {
+            pDataset->Close();
+            return std::unexpected(Error::FAILED_TO_GET_GEO_TRANSFORM);
+        }
 
-    tile.proj_wkt = pDataset->GetProjectionRef();
+        // RasterBand numbering starts with 1
+        // see: https://gdal.org/tutorials/raster_api_tut.html#fetching-a-raster-band [2024-08-14]
+        const auto band = pDataset->GetRasterBand(1);
 
-    if (const auto error = pDataset->GetGeoTransform(tile.geo_transform.values.data()); error != CPLE_None) {
+        tile.size_x = band->GetXSize();
+        tile.size_y = band->GetYSize();
+        tile.height.resize(tile.size_x * tile.size_y);
+
+        if (const auto error = band->RasterIO(GF_Read, 0, 0, tile.size_x, tile.size_y, tile.height.data(), tile.size_x,
+                                              tile.size_y, GDT_Float32, 0, 0);
+            error != CPLE_None) {
+            pDataset->Close();
+            return std::unexpected(Error::FAILED_TO_READ_DATA);
+        }
+
         pDataset->Close();
-        return std::unexpected(Error::FAILED_TO_GET_GEO_TRANSFORM);
+
+        if (normalize_direction) {
+            normalize_tile_data(tile);
+        }
+
+        return tile;
     }
-
-    // RasterBand numbering starts with 1
-    // see: https://gdal.org/tutorials/raster_api_tut.html#fetching-a-raster-band [2024-08-14]
-    const auto band = pDataset->GetRasterBand(1);
-
-    tile.size_x = band->GetXSize();
-    tile.size_y = band->GetYSize();
-    tile.height.resize(tile.size_x * tile.size_y);
-
-    if (const auto error = band->RasterIO(GF_Read, 0, 0, tile.size_x, tile.size_y, tile.height.data(), tile.size_x,
-                                          tile.size_y, GDT_Float32, 0, 0);
-        error != CPLE_None) {
-        pDataset->Close();
-        return std::unexpected(Error::FAILED_TO_READ_DATA);
-    }
-
-    pDataset->Close();
-    return tile;
-}
+} // namespace LibTile
