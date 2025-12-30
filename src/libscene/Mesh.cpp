@@ -17,16 +17,33 @@ namespace LibScene {
             return Error::FAILED_TO_OPEN_OUTPUT_FILE;
         }
 
+        constexpr auto buffer_size = 67108864; // 64 MiB
+        std::string buffer;
+        buffer.reserve(buffer_size);
+
         for (const auto &vertex: vertices) {
-            outputFile << "v " << vertex.x << " " << vertex.y << " " << vertex.z << "\n";
+            buffer += "v " + std::to_string(vertex.x) + " " + std::to_string(vertex.y) + " " +
+                      std::to_string(vertex.z) + "\n";
+
+            if (buffer.size() >= buffer_size * 0.9) {
+                outputFile.write(buffer.data(), buffer.size());
+                buffer = "";
+            }
         }
 
         for (const auto &[a, b, c]: faces) {
             // vertex indices in obj start with 1
-            outputFile << "f " << a + 1 << " " << b + 1 << " " << c + 1 << "\n";
+            buffer += "f " + std::to_string(a + 1) + " " + std::to_string(b + 1) + " " + std::to_string(c + 1) + "\n";
+
+            if (buffer.size() >= buffer_size * 0.9) {
+                outputFile.write(buffer.data(), buffer.size());
+                buffer = "";
+            }
         }
 
+        outputFile.write(buffer.data(), buffer.size());
         outputFile.flush();
+
         outputFile.close();
         return Error::NONE;
     }
