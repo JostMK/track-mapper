@@ -43,13 +43,10 @@ LibScene::Mesh create_mesh_from_tile(const LibTile::GeoTile &tile) {
     return {origin, std::move(vertices), std::move(faces)};
 }
 
-// namespace LibScene
-int main(int argc, char **argv) {
+bool create_mesh_from_file(const std::string &inFilepath, const std::string &outFilepath) {
+    std::cout << "> Loading file.. (" << inFilepath << ")" << std::endl;
 
-    std::cout << "> Loading file.." << std::endl;
-
-    const auto expectedTile = LibTile::load_from_file(
-            R"(D:\Documents\GitHub\track-mapper\data\raster-file\de\dgm1_32_529_5376_2_bw\dgm1_32_529_5376_1_bw_2017.xyz)");
+    const auto expectedTile = LibTile::load_from_file(inFilepath);
 
     if (!expectedTile.has_value()) {
         switch (expectedTile.error()) {
@@ -66,7 +63,7 @@ int main(int argc, char **argv) {
                 std::cout << "UNKNOWN ERROR" << std::endl;
                 break;
         }
-        return 1;
+        return false;
     }
 
     const auto &tile = expectedTile.value();
@@ -85,7 +82,7 @@ int main(int argc, char **argv) {
 
     std::cout << "> Exporting mesh.." << std::endl;
 
-    if (const auto export_error = mesh.export_to_obj("Mesh.obj")) {
+    if (const auto export_error = mesh.export_to_obj(outFilepath)) {
         switch (export_error) {
             case LibScene::Error::FAILED_TO_OPEN_OUTPUT_FILE:
                 std::cout << "FAILED_TO_OPEN_OUTPUT_FILE" << std::endl;
@@ -94,10 +91,18 @@ int main(int argc, char **argv) {
                 std::cout << "UNKNOWN ERROR" << std::endl;
                 break;
         }
-        return 1;
+        return false;
     }
 
-    std::cout << "Output file at './Mesh.obj'" << std::endl;
+    std::cout << "Output file at '" << outFilepath << "'" << std::endl;
+    return true;
+}
 
-    return 0;
+// namespace LibScene
+int main(int argc, char **argv) {
+    create_mesh_from_file(R"(C:\Users\Jost\Downloads\dgm025_32_529_5376_2_bw\dgm025_32_529_5376_2_bw\dgm025_32_529_5376_1_bw_2017.tif)", "Mesh1.obj");
+    std::cout << std::endl;
+    create_mesh_from_file(R"(D:\Documents\GitHub\track-mapper\data\raster-file\road-creation-test\mv\dgm1_33_320_5984_2_gtiff.tif)", "Mesh2.obj");
+    std::cout << std::endl;
+    create_mesh_from_file(R"(D:\Documents\GitHub\track-mapper\data\raster-file\road-creation-test\bw\dgm1_32_529_5376_1_bw_2017.xyz)", "Mesh3.obj");
 }

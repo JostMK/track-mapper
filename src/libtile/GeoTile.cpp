@@ -8,9 +8,13 @@
 #include <gdal_priv.h>
 
 std::expected<LibTile::GeoTile, LibTile::Error> LibTile::load_from_file(const std::string &filepath) {
-    // TODO: maybe find better way to initialise GDAL
-    CPLSetConfigOption("PROJ_LIB", "./proj");
-    GDALAllRegister();
+    static bool gdal_configured = false;
+    if (!gdal_configured) {
+        CPLSetConfigOption("PROJ_LIB", "./proj");
+        GDALAllRegister();
+
+        gdal_configured = true;
+    }
 
     const auto pDataset = GDALDatasetUniquePtr(GDALDataset::FromHandle(GDALOpen(filepath.c_str(), GA_ReadOnly)));
 
@@ -35,7 +39,6 @@ std::expected<LibTile::GeoTile, LibTile::Error> LibTile::load_from_file(const st
     tile.size_y = band->GetYSize();
     tile.height.resize(tile.size_x * tile.size_y);
 
-    // TODO: make type of data dynamic based on file info using band->GetRasterDataType()
     if (const auto error = band->RasterIO(GF_Read, 0, 0, tile.size_x, tile.size_y, tile.height.data(), tile.size_x,
                                           tile.size_y, GDT_Float32, 0, 0);
         error != CPLE_None) {
