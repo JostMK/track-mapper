@@ -8,11 +8,11 @@
 #include "GeoTile.h"
 
 LibScene::Mesh create_mesh_from_tile(const LibTile::GeoTile &tile) {
-    std::vector<LibScene::Double3> vertices;
+    std::vector<LibScene::Float3> vertices;
     std::vector<LibScene::Face> faces;
 
-    LibScene::Double3 origin;
-    tile.geo_transform.get_origin(origin.x, origin.y);
+    double origin_x, origin_z;
+    tile.geo_transform.get_origin(origin_x, origin_z);
 
     vertices.reserve(tile.height.size());
     for (int y = 0; y < tile.size_y; ++y) {
@@ -42,7 +42,7 @@ LibScene::Mesh create_mesh_from_tile(const LibTile::GeoTile &tile) {
         }
     }
 
-    return {{origin.x, 0, -origin.z}, std::move(vertices), std::move(faces)};
+    return {{static_cast<float>(origin_x), 0, static_cast<float>(-origin_z)}, std::move(vertices), std::move(faces)};
 }
 
 bool create_mesh_from_file(const std::string &inFilepath, const std::string &outFilepath) {

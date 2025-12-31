@@ -10,16 +10,16 @@
 
 namespace LibScene {
 
-    union Double3 {
+    union Float3 {
         struct {
-            double x, y, z;
+            float x, y, z;
         };
         struct {
-            double r, g, b;
+            float r, g, b;
         };
 
-        Double3() : x(0), y(0), z(0) {}
-        Double3(const double x, const double y, const double z) : x(x), y(y), z(z) {}
+        Float3() : x(0), y(0), z(0) {}
+        Float3(const float x, const float y, const float z) : x(x), y(y), z(z) {}
     };
 
     struct Face {
@@ -32,9 +32,9 @@ namespace LibScene {
     };
 
     struct Mesh {
-        Double3 origin;
+        Float3 origin;
 
-        std::vector<Double3> vertices;
+        std::vector<Float3> vertices;
         std::vector<Face> faces;
 
         [[nodiscard]] Error export_to_obj(const std::string &filepath) const;

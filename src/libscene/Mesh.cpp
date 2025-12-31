@@ -25,8 +25,8 @@ namespace LibScene {
             buffer += "v " + std::to_string(vertex.x) + " " + std::to_string(vertex.y) + " " +
                       std::to_string(vertex.z) + "\n";
 
-            if (buffer.size() >= buffer_size * 0.9) {
-                outputFile.write(buffer.data(), buffer.size());
+            if (const int saturation = static_cast<int>(buffer.size()); saturation >= buffer_size * 0.9) {
+                outputFile.write(buffer.data(), saturation);
                 buffer = "";
             }
         }
@@ -35,13 +35,13 @@ namespace LibScene {
             // vertex indices in obj start with 1
             buffer += "f " + std::to_string(a + 1) + " " + std::to_string(b + 1) + " " + std::to_string(c + 1) + "\n";
 
-            if (buffer.size() >= buffer_size * 0.9) {
-                outputFile.write(buffer.data(), buffer.size());
+            if (const int saturation = static_cast<int>(buffer.size()); saturation >= buffer_size * 0.9) {
+                outputFile.write(buffer.data(), saturation);
                 buffer = "";
             }
         }
 
-        outputFile.write(buffer.data(), buffer.size());
+        outputFile.write(buffer.data(), static_cast<int>(buffer.size()));
         outputFile.flush();
 
         outputFile.close();
