@@ -21,9 +21,9 @@ add_executable(TESTTEST
 target_link_libraries(TESTTEST PRIVATE LibTile LibScene)
 
 # copies proj lib data files post build - sometimes errors occur if files not present (proj.db file)
-add_custom_command(TARGET TESTTEST POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_directory
-        "$<TARGET_FILE_DIR:PROJ::proj>/..$<$<CONFIG:Debug>:/..>/share/proj"
-        "$<TARGET_FILE_DIR:LibTile>/proj/"
-        COMMENT "Copying proj data from $<TARGET_FILE_DIR:PROJ::proj>/..$<$<CONFIG:Debug>:/..>/share/proj to $<TARGET_FILE_DIR:LibTile>/proj/"
-)
+#add_custom_command(TARGET TESTTEST POST_BUILD
+#        COMMAND ${CMAKE_COMMAND} -E copy_directory
+#        "$<TARGET_FILE_DIR:PROJ::proj>/..$<$<CONFIG:Debug>:/..>/share/proj"
+#        "$<TARGET_FILE_DIR:LibTile>/proj/"
+#        COMMENT "Copying proj data from $<TARGET_FILE_DIR:PROJ::proj>/..$<$<CONFIG:Debug>:/..>/share/proj to $<TARGET_FILE_DIR:LibTile>/proj/"
+#)
